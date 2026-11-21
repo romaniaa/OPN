@@ -2,12 +2,14 @@ import CardMore from "@/components/CardMore";
 import { SnowStat, StatStrip, TempStat } from "@/components/CardStats";
 import { ElevationDiagram } from "@/components/ElevationVisualizer";
 import RangeIcon from "@/components/RangeIcon";
+import { SnowAlertChip } from "@/components/SnowAlert";
 import type { ZoneConfig } from "@/config/zones";
 import { highestDanger, type AvalancheForecast } from "@/lib/Danger";
 import { SNOW_LINE_OFFSET, conditionAt, fmt } from "@/lib/Conditions";
 import { tempAt, windAloft } from "@/lib/Profile";
 import { compass } from "@/components/WindCard";
 import { DANGER_STYLE } from "@/lib/DangerStyle";
+import type { SnowAlert } from "@/lib/SnowAlert";
 import type { SnowNow } from "@/lib/SnowNow";
 import type { HillNow } from "@/lib/PlaceWeather";
 
@@ -28,12 +30,14 @@ export default function ZoneDiagram({
   now,
   forecast,
   snow,
+  alert,
   more = false,
 }: {
   zone: ZoneConfig;
   now: HillNow | null;
   forecast?: AvalancheForecast | null;
   snow?: SnowNow; // dashboard only: snow at the zone's highest station with snow
+  alert?: SnowAlert | null; // snowfall alert, fallen or forecast
   more?: boolean; // the card links to the zone's page: show the "Full report" footer
 }) {
   const heights = [...zone.heights].sort((a, b) => b - a);
@@ -55,10 +59,13 @@ export default function ZoneDiagram({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="flex items-center gap-2 text-3xl font-bold text-ink">
-            {details && <RangeIcon color={zone.color} className="h-4 w-6" />}
-            {zone.name}
-          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="flex items-center gap-2 text-3xl font-bold text-ink">
+              {details && <RangeIcon color={zone.color} className="h-4 w-6" />}
+              {zone.name}
+            </h2>
+            <SnowAlertChip alert={alert} />
+          </div>
           <p className="font-sans text-xs tabular-nums text-muted">
             {details ? "Backcountry · " : ""}
             {fmt(bottom)}–{fmt(top)} m terrain

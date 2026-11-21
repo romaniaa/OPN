@@ -5,6 +5,7 @@ import FreezingChart from "@/components/FreezingChart";
 import PinButton from "@/components/PinButton";
 import RangeIcon from "@/components/RangeIcon";
 import SiteNav from "@/components/SiteNav";
+import { PlaceSnowAlert } from "@/components/SnowAlert";
 import { PageTransition } from "@/components/Transitions";
 import { compass } from "@/components/WindCard";
 import ZoneDiagram from "@/components/ZoneDiagram";
@@ -14,6 +15,8 @@ import ZoneWindCard from "@/components/ZoneWindCard";
 import { Card, SectionLabel, Unavailable } from "@/components/Ui";
 import { ZONES, type ZoneConfig } from "@/config/zones";
 import { getAvalancheForecast } from "@/lib/Avalanche";
+import { snowAlert } from "@/lib/SnowAlert";
+import { zoneSnow } from "@/lib/SnowNow";
 import { getZoneStations } from "@/lib/Stations";
 import { CONDITION, conditionAt, fmt } from "@/lib/Conditions";
 import DailyForecast from "@/components/DailyForecast";
@@ -169,9 +172,15 @@ async function ZoneContent({ zone }: { zone: ZoneConfig }) {
   const freezing = freezingRes.status === "fulfilled" ? freezingRes.value : null;
   const stations = stationsRes.status === "fulfilled" ? stationsRes.value : null;
   const daily = dailyRes.status === "fulfilled" ? dailyRes.value : null;
+  const snow = stations ? zoneSnow(stations) : undefined;
 
   return (
     <>
+      <PlaceSnowAlert
+        name={`${zone.fullName} backcountry`}
+        snow={snow}
+        alert={snowAlert(snow, daily?.days)}
+      />
       {forecast ? (
         <AvalancheCard name={zone.fullName} forecast={forecast} timeZone={zone.timeZone} />
       ) : (

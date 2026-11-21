@@ -64,7 +64,7 @@ const GROUPS: PickerGroup[] = REGIONS.map((r) => ({
 // page carries compact data for every place and draws the visitor's picks in
 // the browser (components/MyHillsCards.tsx).
 export default async function Home() {
-  const { now, avalanche, snow } = await getPlacesNow();
+  const { now, avalanche, snow, alerts } = await getPlacesNow();
 
   // Everything a card needs, for every place. Zones' forecasts are cut to today,
   // the only day a card shows.
@@ -75,6 +75,7 @@ export default async function Home() {
     cards[id] = {
       now: now?.[id as PlaceId] ?? null,
       snow: snow[id as PlaceId],
+      alert: alerts[id as PlaceId],
       ...(zone && {
         avalanche: f?.status === "ok" ? { ...f, days: f.days.slice(0, 1), problems: [] } : f,
       }),

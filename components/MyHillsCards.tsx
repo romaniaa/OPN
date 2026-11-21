@@ -11,6 +11,7 @@ import { MOUNTAINS } from "@/config/mountains";
 import { ZONES } from "@/config/zones";
 import type { AvalancheForecast } from "@/lib/Danger";
 import { weatherFrom, type HillNow } from "@/lib/PlaceWeather";
+import type { SnowAlert } from "@/lib/SnowAlert";
 import type { SnowNow } from "@/lib/SnowNow";
 
 // What one card needs, for every place. A few hundred bytes each, so the page
@@ -19,6 +20,7 @@ export interface CardData {
   now: HillNow | null;
   avalanche?: AvalancheForecast | null; // zones only, trimmed to today
   snow?: SnowNow;
+  alert?: SnowAlert;
 }
 
 // The whole card links to the place's page, with the overview's hover.
@@ -46,6 +48,7 @@ function PlaceCard({ id, data }: { id: string; data: CardData | undefined }) {
               config={m}
               weather={data?.now ? weatherFrom(data.now, m) : null}
               snow={data?.snow}
+              alert={data?.alert}
               more
             />
           </SharedTransition>
@@ -64,6 +67,7 @@ function PlaceCard({ id, data }: { id: string; data: CardData | undefined }) {
           now={data?.now ?? null}
           forecast={data?.avalanche ?? null}
           snow={data?.snow}
+          alert={data?.alert}
           more
         />
       </CardLink>

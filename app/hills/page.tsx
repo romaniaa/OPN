@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HillsPage() {
-  const { now, avalanche, snow } = await getPlacesNow();
+  const { now, avalanche, snow, alerts } = await getPlacesNow();
 
   return (
     <>
@@ -51,7 +51,10 @@ export default async function HillsPage() {
               </p>
             </header>
 
-            <SnowAlertBanner hills={MOUNTAINS.map((m) => ({ config: m, snow: snow[m.id] }))} />
+            <SnowAlertBanner
+              hills={MOUNTAINS.map((m) => ({ config: m, alert: alerts[m.id] }))}
+              zones={ZONES.map((z) => ({ config: z, alert: alerts[z.id] }))}
+            />
 
             {REGIONS.map((region) => {
               const hills = MOUNTAINS.filter((m) => m.region === region.id);
@@ -64,7 +67,12 @@ export default async function HillsPage() {
                     {hills.map((m) => (
                       <div key={m.id} className="flex flex-col gap-2">
                         <div className="flex-1">
-                          <HillCard config={m} now={now?.[m.id] ?? null} snow={snow[m.id]} />
+                          <HillCard
+                            config={m}
+                            now={now?.[m.id] ?? null}
+                            snow={snow[m.id]}
+                            alert={alerts[m.id]}
+                          />
                         </div>
                         <PinButton id={m.id} name={m.fullName} color={m.color} />
                       </div>
@@ -77,6 +85,7 @@ export default async function HillsPage() {
                             now={now?.[z.id] ?? null}
                             forecast={avalanche[z.id] ?? null}
                             snow={snow[z.id]}
+                            alert={alerts[z.id]}
                           />
                         </div>
                         <PinButton id={z.id} name={z.fullName} color={z.color} />

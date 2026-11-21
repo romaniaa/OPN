@@ -67,8 +67,10 @@ export default async function RegionPage({ id }: { id: RegionId }) {
   for (const r of [placesRes, readingsRes]) {
     if (r.status === "rejected") console.error("Fetch failure:", r.reason);
   }
-  const { now, avalanche, snow } =
-    placesRes.status === "fulfilled" ? placesRes.value : { now: null, avalanche: {}, snow: {} };
+  const { now, avalanche, snow, alerts } =
+    placesRes.status === "fulfilled"
+      ? placesRes.value
+      : { now: null, avalanche: {}, snow: {}, alerts: {} };
   const readings = readingsRes.status === "fulfilled" ? readingsRes.value : null;
   const tallest = tallestId(hills);
 
@@ -153,6 +155,7 @@ export default async function RegionPage({ id }: { id: RegionId }) {
                                 weather={h ? weatherFrom(h, m) : null}
                                 isTallest={hills.length > 1 && m.id === tallest}
                                 snow={snow[m.id]}
+                                alert={alerts[m.id]}
                                 more
                               />
                             </SharedTransition>
@@ -169,6 +172,7 @@ export default async function RegionPage({ id }: { id: RegionId }) {
                             now={now?.[z.id] ?? null}
                             forecast={avalanche[z.id] ?? null}
                             snow={snow[z.id]}
+                            alert={alerts[z.id]}
                             more
                           />
                         </CardLink>

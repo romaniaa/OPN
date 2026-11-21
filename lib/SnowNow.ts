@@ -50,6 +50,15 @@ export function snowFromStation(station: ZoneStation | null | undefined): SnowNo
 export const hillSnow = (report: SnowReport | null, station: ZoneStation | null) =>
   snowFromReport(report) ?? snowFromStation(station);
 
+// A zone's snow: its highest current station with snow on the ground, else its
+// highest current station with a (bare) reading.
+export function zoneSnow(stations: ZoneStation[]): SnowNow | undefined {
+  const current = stations
+    .filter((s) => !s.stale && s.reading?.snow != null)
+    .sort((a, b) => b.elevation - a.elevation);
+  return snowFromStation(current.find((s) => s.reading!.snow! > 0) ?? current[0]);
+}
+
 // Every place with a reading. Places without one (no report reader, report not
 // posted, out of season, no station with a snow sensor) are left out. Reports and
 // stations are cached on their own schedules; this only reshapes them.
@@ -82,11 +91,7 @@ export async function getSnowNow(): Promise<Partial<Record<PlaceId, SnowNow>>> {
       console.error("Station failure:", r.reason);
       return;
     }
-    const current = r.value
-      .filter((s) => !s.stale && s.reading?.snow != null)
-      .sort((a, b) => b.elevation - a.elevation);
-    const best = current.find((s) => s.reading!.snow! > 0) ?? current[0];
-    const snow = snowFromStation(best);
+    const snow = zoneSnow(r.value);
     if (snow) out[ZONES[i].id] = snow;
   });
 

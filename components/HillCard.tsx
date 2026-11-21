@@ -3,11 +3,12 @@ import type { CSSProperties } from "react";
 import CardMore from "@/components/CardMore";
 import { SnowStat, StatStrip, TempStat } from "@/components/CardStats";
 import MountainIcon from "@/components/MountainIcon";
-import { SnowAlertChip, snowAlert } from "@/components/SnowAlert";
+import { SnowAlertChip } from "@/components/SnowAlert";
 import { NAV_FORWARD } from "@/components/Transitions";
 import type { MountainConfig } from "@/config/mountains";
 import { conditionAt, extremes, fmt, verdict } from "@/lib/Conditions";
 import { tempAt } from "@/lib/Model";
+import type { SnowAlert } from "@/lib/SnowAlert";
 import type { SnowNow } from "@/lib/SnowNow";
 import type { HillNow } from "@/lib/Weather";
 
@@ -17,10 +18,12 @@ export default function HillCard({
   config,
   now,
   snow,
+  alert,
 }: {
   config: MountainConfig;
   now: HillNow | null;
   snow?: SnowNow;
+  alert?: SnowAlert | null;
 }) {
   const { low, high } = extremes(config);
   const sky = now && {
@@ -49,9 +52,9 @@ export default function HillCard({
             <p className="text-xs tabular-nums text-muted">
               {config.locality} · {fmt(low)}–{fmt(high)} m lifts
             </p>
-            {snowAlert(snow) != null && (
+            {alert && (
               <p className="mt-1.5">
-                <SnowAlertChip snow={snow} />
+                <SnowAlertChip alert={alert} />
               </p>
             )}
           </div>

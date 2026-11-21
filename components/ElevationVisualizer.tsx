@@ -2,6 +2,7 @@ import CardMore from "@/components/CardMore";
 import { SnowStat, StatStrip, TempStat } from "@/components/CardStats";
 import { SnowAlertChip } from "@/components/SnowAlert";
 import type { Landmark, MountainConfig } from "@/config/mountains";
+import type { SnowAlert } from "@/lib/SnowAlert";
 import type { SnowNow } from "@/lib/SnowNow";
 import type { MountainWeather } from "@/lib/PlaceWeather";
 import {
@@ -325,6 +326,7 @@ interface Props {
   weather: MountainWeather | null;
   isTallest?: boolean;
   snow?: SnowNow; // snow on the ground, when the resort's report has it
+  alert?: SnowAlert | null; // snowfall alert, fallen or forecast
   more?: boolean; // the card links to the hill's page: show the "Full report" footer
 }
 
@@ -333,6 +335,7 @@ export default function ElevationVisualizer({
   weather,
   isTallest = false,
   snow,
+  alert,
   more = false,
 }: Props) {
   const { minElevation, maxElevation, landmarks, name, profile } = config;
@@ -372,7 +375,7 @@ export default function ElevationVisualizer({
             {isTallest && (
               <span className="chip bg-ink/10 text-ink">Highest peak</span>
             )}
-            <SnowAlertChip snow={snow} />
+            <SnowAlertChip alert={alert} />
           </div>
           <p className="font-sans text-xs tabular-nums text-muted">
             {fmt(extremes(config).low)}–{fmt(extremes(config).high)} m lifts ·{" "}

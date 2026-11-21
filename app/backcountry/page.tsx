@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PinButton from "@/components/PinButton";
 import SiteNav from "@/components/SiteNav";
+import { SnowAlertBanner } from "@/components/SnowAlert";
 import { PageTransition } from "@/components/Transitions";
 import { SectionLabel } from "@/components/Ui";
 import ZoneCard from "@/components/ZoneCard";
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
 
 // Every backcountry zone by region, with today's avalanche danger and weather.
 export default async function BackcountryPage() {
-  const { now, avalanche, snow } = await getPlacesNow();
+  const { now, avalanche, snow, alerts } = await getPlacesNow();
 
   return (
     <>
@@ -45,6 +46,8 @@ export default async function BackcountryPage() {
               </p>
             </header>
 
+            <SnowAlertBanner zones={ZONES.map((z) => ({ config: z, alert: alerts[z.id] }))} />
+
             {REGIONS.map((region) => {
               const zones = ZONES.filter((z) => z.region === region.id);
               if (zones.length === 0) return null;
@@ -60,6 +63,7 @@ export default async function BackcountryPage() {
                             now={now?.[z.id] ?? null}
                             forecast={avalanche[z.id] ?? null}
                             snow={snow[z.id]}
+                            alert={alerts[z.id]}
                           />
                         </div>
                         <PinButton id={z.id} name={z.fullName} color={z.color} />

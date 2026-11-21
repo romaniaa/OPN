@@ -7,7 +7,7 @@ import LiftTemperatureChart from "@/components/LiftTemperatureChart";
 import MountainIcon from "@/components/MountainIcon";
 import PinButton from "@/components/PinButton";
 import SnowDepthCard from "@/components/SnowDepthCard";
-import { HillSnowAlert } from "@/components/SnowAlert";
+import { PlaceSnowAlert } from "@/components/SnowAlert";
 import SiteNav from "@/components/SiteNav";
 import Summary from "@/components/Summary";
 import WebcamGallery from "@/components/WebcamGallery";
@@ -31,6 +31,7 @@ import {
   mountainTitle,
 } from "@/lib/Site";
 import { REPORT_PAGES } from "@/lib/SnowReaders";
+import { snowAlert } from "@/lib/SnowAlert";
 import { hillSnow, snowFromStation, type SnowNow } from "@/lib/SnowNow";
 import { getSnowReport, type SnowReport } from "@/lib/SnowReport";
 import { getHillSnowStation } from "@/lib/Stations";
@@ -238,10 +239,11 @@ async function MountainContent({ config }: { config: MountainConfig }) {
   // Reading at the highest station, used for wind and the summary.
   const topStation = stations?.[0] ?? null;
   const hillSnowNow = hillSnow(snow, snowStation);
+  const alert = snowAlert(hillSnowNow, daily?.days);
 
   return (
     <>
-          <HillSnowAlert name={config.fullName} snow={hillSnowNow} />
+          <PlaceSnowAlert name={config.fullName} snow={hillSnowNow} alert={alert} />
           <header className="flex flex-wrap items-end justify-between gap-3 pb-2">
             <div>
               <h1 className="flex items-center gap-3 text-4xl sm:gap-4 sm:text-5xl md:text-6xl font-bold">
@@ -321,7 +323,7 @@ async function MountainContent({ config }: { config: MountainConfig }) {
           <SectionLabel>Rain and snow line, and lifts</SectionLabel>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <SharedTransition name={`resort-${config.id}`}>
-              <ElevationVisualizer config={config} weather={weather} snow={hillSnowNow} />
+              <ElevationVisualizer config={config} weather={weather} snow={hillSnowNow} alert={alert} />
             </SharedTransition>
             <div className="lg:col-span-2">
               {stations && freezingLevel != null ? (

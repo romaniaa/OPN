@@ -9,7 +9,9 @@ import {
 } from "@/lib/Avalanche";
 import { verdict } from "@/lib/Conditions";
 import { DANGER_STYLE } from "@/lib/DangerStyle";
+import { getSnowOutlook } from "@/lib/Forecast";
 import type { PlaceId } from "@/lib/Model";
+import { snowAlert, type SnowAlert } from "@/lib/SnowAlert";
 import { getSnowNow, type SnowNow } from "@/lib/SnowNow";
 import { getCurrentConditions, type HillNow } from "@/lib/Weather";
 
@@ -17,24 +19,34 @@ export interface PlacesNow {
   now: Record<PlaceId, HillNow> | null; // null if the weather couldn't be loaded
   avalanche: Partial<Record<ZoneId, AvalancheForecast>>; // empty if it couldn't be loaded
   snow: Partial<Record<PlaceId, SnowNow>>; // places with a snow depth; empty if none loaded
+  alerts: Partial<Record<PlaceId, SnowAlert>>; // places with a snowfall alert
 }
 
-// Current weather for every hill and zone, every zone's avalanche forecast and
-// snow depths, for the pages that list them all (/hills, the region pages, /backcountry and My hills). All come
+// Current weather for every hill and zone, every zone's avalanche forecast, snow
+// depths and snowfall alerts, for the pages that list them all (/hills, the region pages, /backcountry and My hills). All come
 // from the shared caches, so this costs no extra API calls.
 export async function getPlacesNow(): Promise<PlacesNow> {
-  const [nowRes, avyRes, snowRes] = await Promise.allSettled([
+  const [nowRes, avyRes, snowRes, outlookRes] = await Promise.allSettled([
     getCurrentConditions(),
     Promise.all(ZONES.map(async (z) => [z.id, await getAvalancheForecast(z.id)] as const)),
     getSnowNow(),
+    getSnowOutlook(),
   ]);
-  for (const r of [nowRes, avyRes, snowRes]) {
+  for (const r of [nowRes, avyRes, snowRes, outlookRes]) {
     if (r.status === "rejected") console.error("Fetch failure:", r.reason);
+  }
+  const snow = snowRes.status === "fulfilled" ? snowRes.value : {};
+  const outlook = outlookRes.status === "fulfilled" ? outlookRes.value : null;
+  const alerts: Partial<Record<PlaceId, SnowAlert>> = {};
+  for (const { id } of [...MOUNTAINS, ...ZONES]) {
+    const alert = snowAlert(snow[id], outlook?.[id]);
+    if (alert) alerts[id] = alert;
   }
   return {
     now: nowRes.status === "fulfilled" ? nowRes.value : null,
     avalanche: avyRes.status === "fulfilled" ? Object.fromEntries(avyRes.value) : {},
-    snow: snowRes.status === "fulfilled" ? snowRes.value : {},
+    snow,
+    alerts,
   };
 }
 

@@ -4,6 +4,7 @@ import { MOUNTAINS, type MountainId } from "@/config/mountains";
 import type { RegionId } from "@/config/regions";
 import { fetchSnapshot, tempAt, timeZoneOf, type PlaceId } from "@/lib/Model";
 import type { DayForecast } from "@/lib/Daily";
+import { SNOW_ALERT_DAYS } from "@/lib/SnowAlert";
 import { getCurrentConditions, type HillNow } from "@/lib/Weather";
 
 export interface PointReading {
@@ -214,4 +215,32 @@ export async function getDailyForecast(
     updated: snapshot.fetched,
     timeZone,
   };
+}
+
+// Every place's daily forecast from today in its time zone, trimmed to the days
+// and figures the snowfall alerts read (lib/SnowAlert.ts), for the pages that
+// list every place. From the same snapshot, so no extra API calls.
+export async function getSnowOutlook(): Promise<
+  Record<PlaceId, Pick<DayForecast, "date" | "top">[]>
+> {
+  "use cache";
+  cacheLife({ stale: 300, revalidate: 900, expire: 3600 });
+
+  const snapshot = await fetchSnapshot();
+  const now = new Date();
+  return Object.fromEntries(
+    Object.entries(snapshot.places).map(([id, place]) => {
+      const today = new Intl.DateTimeFormat("en-CA", {
+        timeZone: timeZoneOf(id as PlaceId),
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(now);
+      const days = place.daily
+        .filter((d) => d.date >= today)
+        .slice(0, SNOW_ALERT_DAYS)
+        .map(({ date, top }) => ({ date, top }));
+      return [id, days];
+    })
+  ) as Record<PlaceId, Pick<DayForecast, "date" | "top">[]>;
 }

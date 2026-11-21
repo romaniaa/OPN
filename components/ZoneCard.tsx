@@ -4,12 +4,14 @@ import CardMore from "@/components/CardMore";
 import { SnowStat, StatStrip, TempStat } from "@/components/CardStats";
 import { DANGER_STYLE } from "@/lib/DangerStyle";
 import RangeIcon from "@/components/RangeIcon";
+import { SnowAlertChip } from "@/components/SnowAlert";
 import { NAV_FORWARD } from "@/components/Transitions";
 import type { ZoneConfig } from "@/config/zones";
 import { highestDanger, type AvalancheForecast } from "@/lib/Avalanche";
 import { conditionAt, fmt } from "@/lib/Conditions";
 import { tempAt, windAloft } from "@/lib/Model";
 import { compass } from "@/components/WindCard";
+import type { SnowAlert } from "@/lib/SnowAlert";
 import type { SnowNow } from "@/lib/SnowNow";
 import type { HillNow } from "@/lib/Weather";
 
@@ -20,11 +22,13 @@ export default function ZoneCard({
   now,
   forecast,
   snow,
+  alert,
 }: {
   zone: ZoneConfig;
   now: HillNow | null;
   forecast: AvalancheForecast | null;
   snow?: SnowNow;
+  alert?: SnowAlert | null;
 }) {
   const top = Math.max(...zone.heights);
   const bottom = Math.min(...zone.heights);
@@ -51,6 +55,11 @@ export default function ZoneCard({
               <span className="truncate">{zone.fullName}</span>
             </h3>
             <p className="text-xs text-muted">Backcountry · {zone.description}</p>
+            {alert && (
+              <p className="mt-1.5">
+                <SnowAlertChip alert={alert} />
+              </p>
+            )}
           </div>
           {now && (
             <div className="shrink-0 text-right">
