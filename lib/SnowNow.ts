@@ -15,6 +15,7 @@ export interface SnowNow {
   where: string; // e.g. "Peak", "Upper mountain", or "Fidelity · 1,905 m"
   new24: number | null; // new snow in 24 hours, cm, when the source gives it
   source: "report" | "station";
+  saved?: boolean; // the last report kept, shown because the resort couldn't be read
 }
 
 const fmt = (n: number) => n.toLocaleString("en-CA");
@@ -28,6 +29,7 @@ export function snowFromReport(report: SnowReport | null): SnowNow | undefined {
     where: first.label,
     new24: report.snowfall.find((s) => s.label === "24 hours")?.cm ?? null,
     source: "report",
+    ...(report.saved ? { saved: true } : {}),
   };
 }
 

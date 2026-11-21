@@ -3,6 +3,7 @@ import HillCard from "@/components/HillCard";
 import PinButton from "@/components/PinButton";
 import ZoneCard from "@/components/ZoneCard";
 import SiteNav from "@/components/SiteNav";
+import { SnowAlertBanner } from "@/components/SnowAlert";
 import { NAV_FORWARD, PageTransition } from "@/components/Transitions";
 import { SectionLabel } from "@/components/Ui";
 import { MOUNTAINS } from "@/config/mountains";
@@ -49,6 +50,8 @@ export default async function HillsPage() {
                 .
               </p>
             </header>
+
+            <SnowAlertBanner hills={MOUNTAINS.map((m) => ({ config: m, snow: snow[m.id] }))} />
 
             {REGIONS.map((region) => {
               const hills = MOUNTAINS.filter((m) => m.region === region.id);

@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import CardMore from "@/components/CardMore";
 import { SnowStat, StatStrip, TempStat } from "@/components/CardStats";
 import MountainIcon from "@/components/MountainIcon";
+import { SnowAlertChip, snowAlert } from "@/components/SnowAlert";
 import { NAV_FORWARD } from "@/components/Transitions";
 import type { MountainConfig } from "@/config/mountains";
 import { conditionAt, extremes, fmt, verdict } from "@/lib/Conditions";
@@ -48,6 +49,11 @@ export default function HillCard({
             <p className="text-xs tabular-nums text-muted">
               {config.locality} · {fmt(low)}–{fmt(high)} m lifts
             </p>
+            {snowAlert(snow) != null && (
+              <p className="mt-1.5">
+                <SnowAlertChip snow={snow} />
+              </p>
+            )}
           </div>
           {now && (
             <div className="shrink-0 text-right">

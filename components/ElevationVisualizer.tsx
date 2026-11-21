@@ -1,5 +1,6 @@
 import CardMore from "@/components/CardMore";
 import { SnowStat, StatStrip, TempStat } from "@/components/CardStats";
+import { SnowAlertChip } from "@/components/SnowAlert";
 import type { Landmark, MountainConfig } from "@/config/mountains";
 import type { SnowNow } from "@/lib/SnowNow";
 import type { MountainWeather } from "@/lib/PlaceWeather";
@@ -371,6 +372,7 @@ export default function ElevationVisualizer({
             {isTallest && (
               <span className="chip bg-ink/10 text-ink">Highest peak</span>
             )}
+            <SnowAlertChip snow={snow} />
           </div>
           <p className="font-sans text-xs tabular-nums text-muted">
             {fmt(extremes(config).low)}–{fmt(extremes(config).high)} m lifts ·{" "}

@@ -7,6 +7,7 @@ import LiftTemperatureChart from "@/components/LiftTemperatureChart";
 import MountainIcon from "@/components/MountainIcon";
 import PinButton from "@/components/PinButton";
 import SnowDepthCard from "@/components/SnowDepthCard";
+import { HillSnowAlert } from "@/components/SnowAlert";
 import SiteNav from "@/components/SiteNav";
 import Summary from "@/components/Summary";
 import WebcamGallery from "@/components/WebcamGallery";
@@ -236,9 +237,11 @@ async function MountainContent({ config }: { config: MountainConfig }) {
 
   // Reading at the highest station, used for wind and the summary.
   const topStation = stations?.[0] ?? null;
+  const hillSnowNow = hillSnow(snow, snowStation);
 
   return (
     <>
+          <HillSnowAlert name={config.fullName} snow={hillSnowNow} />
           <header className="flex flex-wrap items-end justify-between gap-3 pb-2">
             <div>
               <h1 className="flex items-center gap-3 text-4xl sm:gap-4 sm:text-5xl md:text-6xl font-bold">
@@ -318,7 +321,7 @@ async function MountainContent({ config }: { config: MountainConfig }) {
           <SectionLabel>Rain and snow line, and lifts</SectionLabel>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <SharedTransition name={`resort-${config.id}`}>
-              <ElevationVisualizer config={config} weather={weather} snow={hillSnow(snow, snowStation)} />
+              <ElevationVisualizer config={config} weather={weather} snow={hillSnowNow} />
             </SharedTransition>
             <div className="lg:col-span-2">
               {stations && freezingLevel != null ? (
