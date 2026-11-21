@@ -2,6 +2,7 @@ import CardMore from "@/components/CardMore";
 import { SnowStat, StatStrip, TempStat } from "@/components/CardStats";
 import { SnowAlertChip } from "@/components/SnowAlert";
 import type { Landmark, MountainConfig } from "@/config/mountains";
+import { PASSES, roundCorners, seeded, sketchPolyline, yAt } from "@/lib/Sketch";
 import type { SnowAlert } from "@/lib/SnowAlert";
 import type { SnowNow } from "@/lib/SnowNow";
 import type { MountainWeather } from "@/lib/PlaceWeather";
@@ -17,18 +18,55 @@ import {
   type Sky,
 } from "@/lib/Conditions";
 
-// Simple line-art ridge. Heights match the real elevations, so the peaks sit at the right level.
+// How far back from each corner the ridge lines start to round, in % of the
+// diagram.
+const CORNER = 4;
+
+// A profile ([x %, elevation m]) as a rounded line in the diagram: [x %, height %
+// from the bottom].
+const rounded = (pts: [number, number][], pct: (m: number) => number) =>
+  roundCorners(
+    pts.map(([x, e]): [number, number] => [x, pct(e)]),
+    CORNER
+  );
+
+// Simple line-art ridge. Heights match the real elevations, so the peaks sit at
+// the right level; corners are rounded a little. The ridge itself is drawn
+// crisp; the fainter ridge behind and the contour strata below it are sketched
+// by hand (lib/Sketch.ts).
 function Ridge({
+  id,
   profile,
+  ridge,
   pct,
   color,
 }: {
+  id: string;
   profile: [number, number][];
+  ridge: [number, number][]; // the profile, rounded, as [x %, height %]
   pct: (m: number) => number;
   color: string;
 }) {
+  // Heights count up from the bottom; SVG y counts down from the top.
+  const flip = (pts: [number, number][]) => pts.map(([x, h]): [number, number] => [x, 100 - h]);
   const line = (pts: [number, number][]) =>
-    pts.map(([x, e], i) => `${i ? "L" : "M"}${x} ${100 - pct(e)}`).join(" ");
+    flip(pts).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)} ${y.toFixed(2)}`).join("");
+  const rand = seeded(`${id}-ridge`);
+  // One line as its sketched passes. The diagram is about 4 px to a unit.
+  const sketched = (pts: [number, number][], opacity: number, key: string) =>
+    PASSES.map((pass, i) => (
+      <path
+        key={`${key}-${i}`}
+        d={sketchPolyline(flip(rounded(pts, pct)), rand, { amp: pass.amp * 0.9 })}
+        fill="none"
+        stroke={color}
+        strokeOpacity={opacity * pass.opacity}
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    ));
 
   // A fainter ridge behind, shifted and lowered, for depth.
   const back: [number, number][] = profile.map(([x, e]) => [
@@ -51,17 +89,9 @@ function Ridge({
       className="pointer-events-none absolute inset-0 h-full w-full"
       aria-hidden="true"
     >
+      {sketched(back, 0.3, "back")}
       <path
-        d={line(back)}
-        fill="none"
-        stroke={color}
-        strokeOpacity="0.3"
-        strokeWidth="1"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
-      <path
-        d={`${line(profile)} L100 100 L0 100 Z`}
+        d={`${line(ridge)}L100 100L0 100Z`}
         className="fill-scene-ground"
         stroke={color}
         strokeOpacity="0.9"
@@ -69,42 +99,9 @@ function Ridge({
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
       />
-      {strata.map((pts, k) => (
-        <path
-          key={k}
-          d={line(pts)}
-          fill="none"
-          stroke={color}
-          strokeOpacity={0.28 - k * 0.05}
-          strokeWidth="1"
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
-      ))}
+      {strata.map((pts, k) => sketched(pts, 0.28 - k * 0.05, `strata-${k}`))}
     </svg>
   );
-}
-
-// Height of the ridge at x (0–100), read off the straight segments of the profile.
-function ridgeAt(profile: [number, number][], x: number) {
-  for (let i = 1; i < profile.length; i++) {
-    const [x0, e0] = profile[i - 1];
-    const [x1, e1] = profile[i];
-    if (x <= x1) return e0 + ((e1 - e0) * (x - x0)) / (x1 - x0 || 1);
-  }
-  return profile[profile.length - 1][1];
-}
-
-// Small seeded random generator (mulberry32). Seeding it with the hill's id gives
-// each hill its own scatter that stays put between renders and refreshes.
-function seeded(key: string) {
-  let a = [...key].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 2654435761), 7);
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 interface Tree {
@@ -121,11 +118,7 @@ const SLOPE_TREES = 8;
 // Trees on the ridge line, plus a scatter down the slope below it. Lower trees
 // are nearer the viewer, so they're drawn larger and stronger. Trees too close
 // to one already placed are skipped so the scatter doesn't clump.
-function placeTrees(
-  key: string,
-  profile: [number, number][],
-  pct: (m: number) => number
-): Tree[] {
+function placeTrees(key: string, ridge: [number, number][]): Tree[] {
   const rand = seeded(key);
   const trees: Tree[] = [];
   const clear = (x: number, y: number) =>
@@ -134,7 +127,7 @@ function placeTrees(
   // Along the ridge, keeping clear of the elevation ticks on the left edge.
   for (let i = 0; i < 40 && trees.length < RIDGE_TREES; i++) {
     const x = 6 + rand() * 91;
-    const y = pct(ridgeAt(profile, x));
+    const y = yAt(ridge, x);
     if (clear(x, y)) trees.push({ x, y, size: 18 + rand() * 6, opacity: 0.8 });
   }
 
@@ -143,7 +136,7 @@ function placeTrees(
   for (let i = 0; i < 200 && trees.length < ridgeCount + SLOPE_TREES; i++) {
     const x = 6 + rand() * 91;
     const depth = 0.12 + rand() * 0.8;
-    const y = pct(ridgeAt(profile, x)) * (1 - depth);
+    const y = yAt(ridge, x) * (1 - depth);
     if (y < 3 || !clear(x, y)) continue;
     trees.push({
       x,
@@ -155,24 +148,9 @@ function placeTrees(
   return trees;
 }
 
-// Line-drawn spruce: a straight trunk with pairs of drooping branches that
-// leave the trunk heading down and sweep outward, longer toward the base.
-// Built once on a 20 x 32 grid; each branch is a quadratic curve.
-const SPRUCE = (() => {
-  const cx = 10;
-  const parts = [`M${cx} 2V31`];
-  for (let i = 0; i < 5; i++) {
-    const y = 4 + i * 4.5; // where the branch leaves the trunk
-    const reach = 3.5 + i * 1.6; // how far out it goes
-    const drop = 4 + i * 0.8; // how far it falls on the way
-    for (const dir of [-1, 1]) {
-      parts.push(
-        `M${cx} ${y}Q${cx + dir * reach * 0.15} ${y + drop * 0.9} ${cx + dir * reach} ${y + drop}`
-      );
-    }
-  }
-  return parts.join("");
-})();
+// Line-drawn spruce: three stacked tiers in one outline, each wider than the one
+// above, on a short trunk. Built on a 20 x 32 grid.
+const SPRUCE = "M10 2L5 11H7.5L3 20H6L1.5 28H18.5L14 20H17L12.5 11H15ZM10 28V31";
 
 // Drawn as its own small SVG so it keeps its shape while the ridge beneath it
 // stretches to fit the card.
@@ -186,6 +164,7 @@ function Spruce({ size, color }: { size: number; color: string }) {
       stroke={color}
       strokeWidth="1"
       strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden="true"
     >
       <path d={SPRUCE} vectorEffect="non-scaling-stroke" />
@@ -195,18 +174,16 @@ function Spruce({ size, color }: { size: number; color: string }) {
 
 function Trees({
   id,
-  profile,
-  pct,
+  ridge,
   color,
 }: {
   id: string;
-  profile: [number, number][];
-  pct: (m: number) => number;
+  ridge: [number, number][]; // the rounded ridge line, [x %, height %]
   color: string;
 }) {
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-      {placeTrees(id, profile, pct).map((t, i) => (
+      {placeTrees(id, ridge).map((t, i) => (
         <div
           key={i}
           className="absolute flex -translate-x-1/2 translate-y-[1px]"
@@ -245,6 +222,7 @@ export function ElevationDiagram({
 }) {
   const pct = (m: number) => ((Math.min(max, Math.max(min, m)) - min) / (max - min)) * 100;
   const snowLine = fl - SNOW_LINE_OFFSET;
+  const ridge = rounded(profile, pct);
 
   // Altimeter ticks every 100 m, longer at each 500 m.
   const ticks: number[] = [];
@@ -273,8 +251,8 @@ export function ElevationDiagram({
           style={{ height: `${100 - pct(fl)}%` }}
         />
 
-        <Ridge profile={profile} pct={pct} color={color} />
-        <Trees id={id} profile={profile} pct={pct} color={color} />
+        <Ridge id={id} profile={profile} ridge={ridge} pct={pct} color={color} />
+        <Trees id={id} ridge={ridge} color={color} />
 
         <div
           className="absolute inset-x-0 border-t border-dashed border-scene-line/70"

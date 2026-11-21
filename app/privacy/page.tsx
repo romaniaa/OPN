@@ -16,13 +16,14 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title={TITLE} updated="November 20, 2026">
+    <LegalPage title={TITLE} updated="November 21, 2026">
       <p>
         {SITE_NAME} (openpeaks.ca) is a free ski conditions site run by{" "}
         <a href={CREATOR_URL}>{CREATOR_NAME}</a> in British Columbia, Canada. The
         short version: there are no accounts, no cookies of our own, no analytics and
-        no ads. We don&apos;t collect your personal information and we don&apos;t sell
-        or share anything about you.
+        no ads. We don&apos;t collect your personal information (unless you choose to
+        support the site; see below) and we don&apos;t sell or share anything about
+        you.
       </p>
 
       <h2>What stays in your browser</h2>
@@ -71,6 +72,17 @@ export default function PrivacyPage() {
         services once you scroll to them, so they receive your IP address and browser
         information and may set their own cookies. Their privacy policies apply to
         those embeds, not this one.
+      </p>
+
+      <h2>Supporting {SITE_NAME}</h2>
+      <p>
+        The Support button opens a checkout page hosted by Stripe, where you can
+        choose to give a one-off amount. Your payment details go to Stripe, not to us,
+        and nothing about you is sent to Stripe unless you open that page. If you do
+        give, we receive the payment and the details Stripe passes on to merchants,
+        such as your name, email and amount, which we use only to keep records of the
+        payment. See{" "}
+        <a href="https://stripe.com/privacy">Stripe&apos;s privacy policy</a>.
       </p>
 
       <h2>Links to other sites</h2>
