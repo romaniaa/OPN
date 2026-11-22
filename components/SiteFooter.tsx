@@ -8,7 +8,7 @@ export const CREATOR_URL = "https://romanhermens.com";
 // Where the footer's Support button goes: a Stripe Payment Link, where people
 // choose what to give. Stripe hosts the checkout, so no payment details or keys
 // touch this site. The button is hidden while this is empty.
-export const SUPPORT_URL = "https://buy.stripe.com/7sY14g0aLgTQ6CJ9Bm6wE00";
+export const SUPPORT_URL = "https://buy.stripe.com/cNi6oAaPp6fc8KRcNy6wE01";
 
 // A small heart for the Support button.
 function Heart() {
