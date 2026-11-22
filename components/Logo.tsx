@@ -2,9 +2,8 @@ import { SITE_NAME } from "@/lib/Site";
 
 // The OpenPeaks logo, from the brand kit (nav-logo-*.svg): the orange sun behind
 // the peak, the peak, and the wordmark. The sun keeps its orange; the peak and
-// wordmark take the brand colour (--brand), navy on light pages and white on dark
-// ones, like the kit's positive and reversed versions. With `mark`, just the sun
-// and the peak. Set the height with className; the width follows.
+// wordmark take the brand colour (--brand): black on light pages, white on dark
+// ones. With `mark`, just the sun and the peak. Set the height with className; the width follows.
 
 const SUN =
   "M148.6 118.3 L148.2 118.3 L147.9 118.2 L147.5 118.1 L147.1 117.8 L146.3 117 L145.3 115.8 L103.3 50.5 L102.3 49.1 L101.5 48.3 L100.8 47.8 L100 47.6 L99.5 47.7 L99.1 47.8 L98.4 48.3 L97.6 49.1 L96.6 50.5 L54.4 116 L53.2 117.4 L52.8 117.8 L52.4 118.1 L51.9 118.3 L51.5 118.3 L51.1 118.2 L50.8 118 L50.1 117.5 L49.4 116.6 L48.6 115.4 L47.7 113.6 L46.7 111.5 L45.7 109.2 L44.9 107 L44.1 104.8 L43.6 102.8 L43 100.6 L42.6 98.6 L42.3 96.5 L42 94.4 L41.8 92.2 L41.7 90.1 L41.6 88 L41.7 83.9 L42.2 79.8 L42.8 75.8 L43.8 71.8 L45.1 67.9 L46.6 64.1 L48.4 60.4 L50.4 56.9 L52 54.5 L53.6 52.2 L55.5 50 L57.4 47.9 L59.4 45.8 L61.5 43.9 L63.8 42 L66.1 40.2 L68.5 38.6 L70.9 37.2 L73.4 35.8 L76 34.5 L78.6 33.4 L81.2 32.5 L84 31.6 L86.8 30.9 L89.5 30.3 L92.4 29.9 L95.2 29.6 L98.1 29.4 L101 29.4 L103.9 29.5 L106.8 29.8 L109.6 30.2 L112.5 30.8 L115.2 31.4 L118 32.3 L120.6 33.2 L123.2 34.3 L125.9 35.5 L128.4 36.8 L130.8 38.2 L133.2 39.9 L135.6 41.6 L137.9 43.4 L140 45.3 L142 47.4 L144 49.5 L145.8 51.8 L147.5 54 L149.1 56.4 L150.6 58.9 L152 61.4 L153.2 64 L154.3 66.6 L155.3 69.4 L156.1 72.1 L156.9 75 L157.4 77.9 L157.9 80.9 L158.1 83.9 L158.3 86.9 L158.2 89.9 L158 92.9 L157.7 95.9 L157.2 98.8 L156.5 102 L155.6 105.1 L154.5 108.2 L153.3 111.2 L151.9 114.2 L150.7 116.4 L150.1 117.1 L149.6 117.7 L149.1 118 L148.6 118.3Z";
