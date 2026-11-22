@@ -76,8 +76,8 @@ export default function PrivacyPage() {
 
       <h2>Supporting {SITE_NAME}</h2>
       <p>
-        The Support button opens a checkout page hosted by Stripe, where you can
-        choose to give a one-off amount. Your payment details go to Stripe, not to us,
+        The &ldquo;Buy me a coffee&rdquo; button opens a checkout page hosted by
+        Stripe, where you can choose to give a one-off amount. Your payment details go to Stripe, not to us,
         and nothing about you is sent to Stripe unless you open that page. If you do
         give, we receive the payment and the details Stripe passes on to merchants,
         such as your name, email and amount, which we use only to keep records of the
