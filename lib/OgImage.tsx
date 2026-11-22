@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import Logo from "@/components/Logo";
 import type { MountainConfig } from "@/config/mountains";
 import { SITE_NAME } from "@/lib/Site";
 
@@ -19,12 +20,10 @@ function ridgePath(m: MountainConfig, x0: number, width: number, floor: number, 
 }
 
 export function ogImage({
-  eyebrow,
   title,
   subtitle,
   mountains,
 }: {
-  eyebrow: string;
   title: string;
   subtitle: string;
   mountains: MountainConfig[];
@@ -47,9 +46,7 @@ export function ogImage({
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", padding: "64px 72px 0" }}>
-          <div style={{ fontSize: 28, letterSpacing: 6, color: "#9aa7b5", textTransform: "uppercase" }}>
-            {eyebrow}
-          </div>
+          <Logo color="white" height={56} />
           <div style={{ fontSize: 76, fontWeight: 700, marginTop: 16, lineHeight: 1.05 }}>
             {title}
           </div>

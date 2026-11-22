@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef } from "react";
+import Logo from "@/components/Logo";
 import MountainIcon from "@/components/MountainIcon";
 import RangeIcon from "@/components/RangeIcon";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -171,12 +172,8 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
       {/* Phones: the brand up top, and the controls in a bar floating at the
           bottom centre, within reach of a thumb. */}
       <div className="py-3 md:hidden">
-        <Link
-          href="/"
-          transitionTypes={NAV_BACK}
-          className="whitespace-nowrap font-display text-lg font-bold uppercase tracking-widest text-ink"
-        >
-          OpenPeaks
+        <Link href="/" transitionTypes={NAV_BACK} className="inline-flex py-0.5">
+          <Logo className="h-6 w-auto" />
         </Link>
       </div>
       <div
@@ -219,12 +216,8 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
 
       {/* Larger screens: the tab row. */}
       <div className="mx-auto hidden max-w-8xl items-center gap-1 overflow-x-auto md:flex">
-        <Link
-          href="/"
-          transitionTypes={NAV_BACK}
-          className="mr-4 whitespace-nowrap py-3 font-display text-lg font-bold uppercase tracking-widest text-ink"
-        >
-          OpenPeaks
+        <Link href="/" transitionTypes={NAV_BACK} className="mr-4 shrink-0 py-3">
+          <Logo className="h-6 w-auto" />
         </Link>
         {items.map((item) => {
           const isActive = item.id === active;
@@ -268,9 +261,7 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between gap-3 border-b border-line-2 px-4 py-3">
             <div>
-              <p className="font-display text-lg font-bold uppercase tracking-widest">
-                OpenPeaks
-              </p>
+              <Logo className="mb-1 h-5 w-auto" />
               <p className="text-xs text-faint">
                 {status?.asOf
                   ? `Conditions as of ${status.asOf} · updated hourly`

@@ -19,6 +19,7 @@
   --color-edge: var(--edge);
   --color-tick: var(--tick);
   --color-ink: var(--ink);
+  --color-brand: var(--brand);
   --color-ink-2: var(--ink-2);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
@@ -46,6 +47,7 @@
 [data-theme="dark"] {
   color-scheme: dark;
   --page: #0a0d10;
+  --brand: #ffffff; /* the logo's mountain and wordmark (reversed) */
   --surface: #13181d;
   --sunken: #0f1316;
   --raised: #1a2026;
@@ -87,6 +89,7 @@
   :root:not([data-theme="dark"]) {
     color-scheme: light;
     --page: #f3f5f7;
+    --brand: #102a5c; /* the logo's navy (positive) */
     --surface: #ffffff;
     --sunken: #e9edf1;
     --raised: #ffffff;
@@ -120,6 +123,7 @@
 [data-theme="light"] {
   color-scheme: light;
   --page: #f3f5f7;
+  --brand: #102a5c; /* the logo's navy (positive) */
   --surface: #ffffff;
   --sunken: #e9edf1;
   --raised: #ffffff;
