@@ -1,9 +1,12 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-barlow);
+  --font-sans: var(--font-archivo);
+  --font-sans--font-variation-settings: normal;
   --font-mono: var(--font-plex-mono);
-  --font-display: var(--font-barlow-condensed);
+  /* Archivo, condensed via its width axis. */
+  --font-display: var(--font-archivo);
+  --font-display--font-variation-settings: "wdth" 75;
   /* Page content cap, used as max-w-8xl. */
   --container-8xl: 1560px;
 
@@ -174,6 +177,13 @@
   h2,
   h3 {
     font-family: var(--font-display);
+    font-variation-settings: "wdth" 75;
+  }
+
+  /* Section and card headings in small capitals, like trail signs. Page titles
+     (h1) stay in sentence case: in capitals at that size they shout. */
+  h2,
+  h3 {
     text-transform: uppercase;
     letter-spacing: 0.03em;
   }
@@ -197,19 +207,47 @@
   }
 }
 
+/* Page headers get 100px of air above and below on larger screens, 56px on
+   phones. main already pads 2rem on top, so the header adds the rest. A utility,
+   so its bottom margin beats the parent's space-y. */
+@utility page-header {
+  padding-top: calc(3.5rem - 2rem);
+  margin-block-end: 3.5rem;
+  @media (width >= 48rem) {
+    padding-top: calc(100px - 2rem);
+    margin-block-end: 100px;
+  }
+}
+
 @layer components {
+  /* The space above a section heading is what separates sections. Right after
+     a page header, the header's own 100px already does that. */
+  .section-head {
+    padding-top: 2rem;
+  }
+  @media (width >= 48rem) {
+    .section-head {
+      padding-top: 3rem;
+    }
+  }
+  .page-header + section > .section-head:first-child,
+  .page-header + .section-head {
+    padding-top: 0;
+  }
+
   /* Square panel with survey registration ticks in each corner. */
   .plate {
-    --tick-c: var(--tick);
+    /* The ticks at 70% strength, so they sit back behind the content. */
+    --tick-c: color-mix(in srgb, var(--tick) 70%, transparent);
     background-image:
-      linear-gradient(var(--tick), var(--tick)),
-      linear-gradient(var(--tick), var(--tick)),
-      linear-gradient(var(--tick), var(--tick)),
-      linear-gradient(var(--tick), var(--tick)),
-      linear-gradient(var(--tick), var(--tick)),
-      linear-gradient(var(--tick), var(--tick)),
-      linear-gradient(var(--tick), var(--tick)),
-      linear-gradient(var(--tick), var(--tick));
+      linear-gradient(var(--tick-c), var(--tick-c)),
+      linear-gradient(var(--tick-c), var(--tick-c)),
+      linear-gradient(var(--tick-c), var(--tick-c)),
+      linear-gradient(var(--tick-c), var(--tick-c)),
+      linear-gradient(var(--tick-c), var(--tick-c)),
+      linear-gradient(var(--tick-c), var(--tick-c)),
+      linear-gradient(var(--tick-c), var(--tick-c)),
+      linear-gradient(var(--tick-c), var(--tick-c));
     background-repeat: no-repeat;
     background-size:
       12px 1px, 1px 12px,
@@ -231,6 +269,7 @@
     border-left: 2px solid currentColor;
     padding: 0.125rem 0.5rem;
     font-family: var(--font-display);
+    font-variation-settings: "wdth" 75;
     font-size: 0.8125rem;
     font-weight: 600;
     line-height: 1.25rem;
@@ -333,6 +372,10 @@
      keyboards and screen readers work as usual. */
   .check-row {
     --orb: #7dd3fc;
+    /* Holds the visually hidden checkbox inside the row. Without it the input
+       is placed against the nearest positioned ancestor (the picker drawer), off
+       in its own spot, and focusing it on a tick scrolls the drawer away. */
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -451,6 +494,76 @@
   .orb-pill[data-on]:hover::before {
     filter: brightness(1.12);
   }
+  /* Secondary: an outline with quieter text, for ways onward that shouldn't
+     compete with the page's main actions. It fills in on hover like the rest,
+     and its arrow nudges forward. */
+  .orb-pill-secondary {
+    padding: 0 0.625rem 0 0.75rem;
+    color: var(--ink-2);
+    background: transparent;
+    border-color: var(--line-2);
+  }
+  .orb-pill-secondary:hover {
+    color: var(--ink);
+    background: var(--raised);
+    border-color: var(--edge);
+  }
+  .orb-pill-secondary .pill-arrow {
+    color: var(--muted);
+    transition:
+      translate 0.2s ease,
+      color 0.2s ease;
+  }
+  .orb-pill-secondary:hover .pill-arrow {
+    color: var(--ink);
+    translate: 2px 0;
+  }
+
+  /* Mobile tab bar: icon only, and the current tab's name slides out beside its
+     icon. The label collapses to zero width (a 0fr grid column) rather than
+     display: none, so it animates and stays the link's accessible name. */
+  .nav-tab {
+    gap: 0;
+  }
+  /* The tabs you're not on sit back; the current one fills with --orb. */
+  .nav-tab:not([data-on]) {
+    color: var(--muted);
+  }
+  .nav-tab-label {
+    display: grid;
+    grid-template-columns: 0fr;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+      grid-template-columns 0.4s cubic-bezier(0.2, 0, 0, 1),
+      opacity 0.15s ease;
+  }
+  .nav-tab-label > span {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    padding-left: 0.5rem;
+    translate: -0.375rem 0;
+    transition: translate 0.4s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .nav-tab[data-on] .nav-tab-label {
+    grid-template-columns: 1fr;
+    opacity: 1;
+    transition:
+      grid-template-columns 0.4s cubic-bezier(0.2, 0, 0, 1),
+      opacity 0.25s ease 0.1s;
+  }
+  .nav-tab[data-on] .nav-tab-label > span {
+    translate: 0;
+  }
+
+  /* The desktop tabs' shared underline, slid into place by NavClient. */
+  .nav-underline {
+    transition:
+      translate 0.35s cubic-bezier(0.2, 0, 0, 1),
+      width 0.35s cubic-bezier(0.2, 0, 0, 1),
+      opacity 0.2s ease;
+  }
 
   /* A small solid count, e.g. on "My hills". */
   .orb-badge {
@@ -468,6 +581,10 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .nav-underline,
+    .orb-pill-secondary .pill-arrow,
+    .nav-tab-label,
+    .nav-tab-label > span,
     .orb,
     .orb::before,
     .orb-icon,

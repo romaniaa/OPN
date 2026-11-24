@@ -5,7 +5,6 @@ import ElevationVisualizer from "@/components/ElevationVisualizer";
 import MountainIcon from "@/components/MountainIcon";
 import PinButton from "@/components/PinButton";
 import RangeIcon from "@/components/RangeIcon";
-import SiteNav from "@/components/SiteNav";
 import TemperatureChart from "@/components/TemperatureChart";
 import { NAV_FORWARD, PageTransition, SharedTransition } from "@/components/Transitions";
 import { SectionLabel, Unavailable } from "@/components/Ui";
@@ -14,7 +13,6 @@ import ZoneDiagram from "@/components/ZoneDiagram";
 import { MOUNTAINS } from "@/config/mountains";
 import { AREAS, regionById, type RegionId } from "@/config/regions";
 import { ZONES } from "@/config/zones";
-import { tallestId } from "@/lib/Conditions";
 import { getPointReadings } from "@/lib/Forecast";
 import { getPlacesNow } from "@/lib/Places";
 import { HOME_TITLE, OPEN_GRAPH, SITE_NAME, SITE_URL, jsonLd } from "@/lib/Site";
@@ -41,7 +39,7 @@ function CardLink({ href, color, children }: { href: string; color: string; chil
     <Link
       href={href}
       transitionTypes={NAV_FORWARD}
-      className="group block flex-1 transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/60"
+      className="group block flex-1 transition-shadow hover:shadow-[0_0_0_2px_var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/60"
       style={{ "--accent": color } as CSSProperties}
     >
       {children}
@@ -72,7 +70,6 @@ export default async function RegionPage({ id }: { id: RegionId }) {
       ? placesRes.value
       : { now: null, avalanche: {}, snow: {}, alerts: {} };
   const readings = readingsRes.status === "fulfilled" ? readingsRes.value : null;
-  const tallest = tallestId(hills);
 
   const tops = readings
     ? hills.flatMap((m) => {
@@ -97,12 +94,11 @@ export default async function RegionPage({ id }: { id: RegionId }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumb) }}
       />
-      <SiteNav />
       <PageTransition>
         <main className="min-h-screen px-4 py-8 text-ink md:px-10">
           <div className="mx-auto max-w-8xl space-y-5">
-            <header className="pb-2">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold">{region.name} ski conditions</h1>
+            <header className="page-header">
+              <h1 className="text-4xl font-extrabold sm:text-5xl md:text-6xl">{region.name} ski conditions</h1>
               <p className="mt-2 max-w-3xl text-ink-2">
                 {region.intro} Rain or snow, temperature and snow depth for each, updated
                 hourly.
@@ -153,7 +149,6 @@ export default async function RegionPage({ id }: { id: RegionId }) {
                               <ElevationVisualizer
                                 config={m}
                                 weather={h ? weatherFrom(h, m) : null}
-                                isTallest={hills.length > 1 && m.id === tallest}
                                 snow={snow[m.id]}
                                 alert={alerts[m.id]}
                                 more

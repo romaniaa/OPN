@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import HillCard from "@/components/HillCard";
 import PinButton from "@/components/PinButton";
 import ZoneCard from "@/components/ZoneCard";
-import SiteNav from "@/components/SiteNav";
 import { SnowAlertBanner } from "@/components/SnowAlert";
 import { NAV_FORWARD, PageTransition } from "@/components/Transitions";
 import { SectionLabel } from "@/components/Ui";
@@ -34,12 +33,11 @@ export default async function HillsPage() {
 
   return (
     <>
-      <SiteNav />
       <PageTransition>
         <main className="min-h-screen px-4 py-8 text-ink md:px-10">
           <div className="mx-auto max-w-8xl space-y-5">
-            <header className="pb-2">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold">All hills and backcountry</h1>
+            <header className="page-header">
+              <h1 className="text-4xl font-extrabold sm:text-5xl md:text-6xl">All hills and backcountry</h1>
               <p className="mt-2 max-w-3xl text-ink-2">
                 Current conditions at every ski area and backcountry zone we cover,
                 grouped by region. Open one for its freezing-level forecast, and lifts

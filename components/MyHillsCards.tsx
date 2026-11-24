@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, type CSSProperties, type ReactNode } from "react";
-import CardActions from "@/components/CardActions";
 import ElevationVisualizer from "@/components/ElevationVisualizer";
 import { NAV_FORWARD, SharedTransition } from "@/components/Transitions";
 import { useDashboard } from "@/components/useDashboard";
@@ -29,7 +28,7 @@ function CardLink({ href, color, children }: { href: string; color: string; chil
     <Link
       href={href}
       transitionTypes={NAV_FORWARD}
-      className="group block flex-1 transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/60"
+      className="group block flex-1 transition-shadow hover:shadow-[0_0_0_2px_var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/60"
       style={{ "--accent": color } as CSSProperties}
     >
       {children}
@@ -53,7 +52,6 @@ function PlaceCard({ id, data }: { id: string; data: CardData | undefined }) {
             />
           </SharedTransition>
         </CardLink>
-        <CardActions id={m.id} name={m.fullName} />
       </div>
     );
   }
@@ -71,7 +69,6 @@ function PlaceCard({ id, data }: { id: string; data: CardData | undefined }) {
           more
         />
       </CardLink>
-      <CardActions id={z.id} name={z.fullName} />
     </div>
   );
 }

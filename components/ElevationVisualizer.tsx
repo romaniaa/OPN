@@ -1,8 +1,9 @@
 import CardMore from "@/components/CardMore";
 import { SnowStat, StatStrip, TempStat } from "@/components/CardStats";
+import MountainIcon from "@/components/MountainIcon";
 import { SnowAlertChip } from "@/components/SnowAlert";
 import type { Landmark, MountainConfig } from "@/config/mountains";
-import { PASSES, roundCorners, seeded, sketchPolyline, yAt } from "@/lib/Sketch";
+import { roundCorners, seeded, yAt } from "@/lib/Sketch";
 import type { SnowAlert } from "@/lib/SnowAlert";
 import type { SnowNow } from "@/lib/SnowNow";
 import type { MountainWeather } from "@/lib/PlaceWeather";
@@ -30,10 +31,66 @@ const rounded = (pts: [number, number][], pct: (m: number) => number) =>
     CORNER
   );
 
+// Contour lines below the ridge, like a topo map's: each its own line rather
+// than a copy of the ridge. Further down they spread wider around the peak and
+// smooth out, and each wanders on its own slow undulation, so neighbours bunch
+// and spread apart. Every line stays a little below the one above it (and the
+// ridge), so they never cross. Seeded per hill, so they're the same on every
+// render. Heights are % from the bottom; x is % across.
+const CONTOURS = 5;
+const STEP = 1; // sample every 1% across
+
+function contours(key: string, ridge: [number, number][]): [number, number][][] {
+  const rand = seeded(`${key}-contours`);
+  const xs = Array.from({ length: 100 / STEP + 1 }, (_, i) => i * STEP);
+  const top = xs.map((x) => yAt(ridge, x));
+  const high = Math.max(...top);
+  const low = Math.min(...top);
+  const peak = xs[top.indexOf(high)];
+  const gap = Math.max(4, (high - low) / 6); // average spacing between lines
+
+  const lines: number[][] = [];
+  let above = top;
+  let drop = 0;
+  for (let k = 1; k <= CONTOURS; k++) {
+    drop += gap * (0.75 + rand() * 0.5);
+    // Spread out from the peak: sample the ridge closer in than x.
+    const spread = 1 + 0.07 * k;
+    const wide = xs.map((x) => yAt(ridge, peak + (x - peak) / spread));
+    // Smooth more the further down: a moving average over a wider window.
+    const w = 1 + 2 * k;
+    const smooth = wide.map((_, i) => {
+      let sum = 0;
+      let n = 0;
+      for (let j = Math.max(0, i - w); j <= Math.min(wide.length - 1, i + w); j++) {
+        sum += wide[j];
+        n++;
+      }
+      return sum / n;
+    });
+    // Its own slow wander: two waves with random length and phase.
+    const waves = [0, 1].map((n) => ({
+      amp: gap * (n ? 0.1 : 0.22),
+      len: n ? 18 + rand() * 14 : 45 + rand() * 40,
+      phase: rand() * Math.PI * 2,
+    }));
+    const line = smooth.map((h, i) => {
+      const wander = waves.reduce(
+        (sum, v) => sum + v.amp * Math.sin((xs[i] / v.len) * Math.PI * 2 + v.phase),
+        0
+      );
+      // Never closer than about a third of a gap to the line above.
+      return Math.min(h - drop + wander, above[i] - gap * 0.35);
+    });
+    lines.push(line);
+    above = line;
+  }
+  return lines.map((line) => line.map((h, i): [number, number] => [xs[i], h]));
+}
+
 // Simple line-art ridge. Heights match the real elevations, so the peaks sit at
-// the right level; corners are rounded a little. The ridge itself is drawn
-// crisp; the fainter ridge behind and the contour strata below it are sketched
-// by hand (lib/Sketch.ts).
+// the right level; corners are rounded a little. Behind it a fainter ridge for
+// depth, and below it contour lines, all drawn as single clean lines.
 function Ridge({
   id,
   profile,
@@ -48,25 +105,21 @@ function Ridge({
   color: string;
 }) {
   // Heights count up from the bottom; SVG y counts down from the top.
-  const flip = (pts: [number, number][]) => pts.map(([x, h]): [number, number] => [x, 100 - h]);
   const line = (pts: [number, number][]) =>
-    flip(pts).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)} ${y.toFixed(2)}`).join("");
-  const rand = seeded(`${id}-ridge`);
-  // One line as its sketched passes. The diagram is about 4 px to a unit.
-  const sketched = (pts: [number, number][], opacity: number, key: string) =>
-    PASSES.map((pass, i) => (
-      <path
-        key={`${key}-${i}`}
-        d={sketchPolyline(flip(rounded(pts, pct)), rand, { amp: pass.amp * 0.9 })}
-        fill="none"
-        stroke={color}
-        strokeOpacity={opacity * pass.opacity}
-        strokeWidth="1"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
-    ));
+    pts.map(([x, h], i) => `${i ? "L" : "M"}${x.toFixed(2)} ${(100 - h).toFixed(2)}`).join("");
+  const faint = (d: string, opacity: number, key: string) => (
+    <path
+      key={key}
+      d={d}
+      fill="none"
+      stroke={color}
+      strokeOpacity={opacity}
+      strokeWidth="1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      vectorEffect="non-scaling-stroke"
+    />
+  );
 
   // A fainter ridge behind, shifted and lowered, for depth.
   const back: [number, number][] = profile.map(([x, e]) => [
@@ -75,13 +128,6 @@ function Ridge({
   ]);
   back.sort((a, b) => a[0] - b[0]);
 
-  // Fading echoes below the ridge line, drawn like contour strata.
-  const span = profile.reduce((hi, [, e]) => Math.max(hi, e), 0) -
-    profile.reduce((lo, [, e]) => Math.min(lo, e), Infinity);
-  const strata = [1, 2, 3, 4].map((k) =>
-    profile.map(([x, e]): [number, number] => [x, e - (k * span) / 7])
-  );
-
   return (
     <svg
       viewBox="0 0 100 100"
@@ -89,7 +135,7 @@ function Ridge({
       className="pointer-events-none absolute inset-0 h-full w-full"
       aria-hidden="true"
     >
-      {sketched(back, 0.3, "back")}
+      {faint(line(rounded(back, pct)), 0.22, "back")}
       <path
         d={`${line(ridge)}L100 100L0 100Z`}
         className="fill-scene-ground"
@@ -99,7 +145,7 @@ function Ridge({
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
       />
-      {strata.map((pts, k) => sketched(pts, 0.28 - k * 0.05, `strata-${k}`))}
+      {contours(id, ridge).map((pts, k) => faint(line(pts), 0.2 - k * 0.03, `contour-${k}`))}
     </svg>
   );
 }
@@ -128,7 +174,7 @@ function placeTrees(key: string, ridge: [number, number][]): Tree[] {
   for (let i = 0; i < 40 && trees.length < RIDGE_TREES; i++) {
     const x = 6 + rand() * 91;
     const y = yAt(ridge, x);
-    if (clear(x, y)) trees.push({ x, y, size: 18 + rand() * 6, opacity: 0.8 });
+    if (clear(x, y)) trees.push({ x, y, size: 11 + rand() * 3, opacity: 0.8 });
   }
 
   // Down the slope: depth runs from just under the ridge (0) to the foot of the card (1).
@@ -141,33 +187,34 @@ function placeTrees(key: string, ridge: [number, number][]): Tree[] {
     trees.push({
       x,
       y,
-      size: 18 + depth * 18 + rand() * 4,
+      size: 11 + depth * 8 + rand() * 2,
       opacity: 0.45 + depth * 0.4,
     });
   }
   return trees;
 }
 
-// Line-drawn spruce: three stacked tiers in one outline, each wider than the one
-// above, on a short trunk. Built on a 20 x 32 grid.
-const SPRUCE = "M10 2L5 11H7.5L3 20H6L1.5 28H18.5L14 20H17L12.5 11H15ZM10 28V31";
+// Line-drawn tree: a trunk with four pairs of sweeping branches. The viewBox is
+// cropped to the drawing, so the foot of the trunk sits on the ground line.
+const TREE =
+  "M36.1,88.6c0-.5.7-.8,1-.4,3.8,4.7,9.1,8,15.8,9.8,4.6,1.2,8.9,1.5,11.5,1.5s2.5,0,2.6,0c1,0,1.7-1,1.6-1.9s-1-1.7-1.9-1.6c0,0-6.1.5-12.9-1.3-8.8-2.4-14.7-7.5-17.7-15.2v-19.1c0-.7.8-.9,1.2-.5,7.8,8.7,20.3,9.4,23.8,9.4s1,0,1,0c1,0,1.7-.9,1.7-1.9,0-1-.9-1.7-1.9-1.7-.2,0-19.9,1.1-25.8-14.5v-15.3c0-1.2,1.4-1.8,2.3-1,7.1,6.2,17,6.4,17.9,6.4h0c1,0,1.8-.8,1.8-1.8,0-1-.8-1.8-1.8-1.8h0c-.3,0-15.6-.1-20.2-12.2v-15.5c0-.7.8-1,1.3-.6,5.3,4.6,12.2,5.4,12.6,5.4,0,0,.1,0,.2,0,.9,0,1.7-.7,1.8-1.6.1-1-.6-1.9-1.6-2-.1,0-11.2-1.3-14.4-10,0,0,0,0,0,0,0,0,0,0,0,0,0-.1-.1-.2-.2-.3,0,0,0-.2-.2-.2,0,0,0,0,0,0,0,0-.2-.1-.2-.2,0,0-.2-.1-.3-.2,0,0,0,0,0,0,0,0,0,0,0,0,0,0-.2,0-.2,0-.1,0-.2,0-.3,0,0,0,0,0,0,0s0,0,0,0c-.1,0-.2,0-.3,0,0,0-.2,0-.3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0-.2.1-.2.2,0,0,0,0,0,0,0,0-.2,0-.2.2,0,0,0,0,0,0,0,0-.1.2-.2.2,0,0,0,0,0,0,0,0-.1.2-.2.3,0,0,0,0,0,0,0,0,0,0,0,0-3.2,8.7-14.2,10-14.4,10-1,.1-1.7,1-1.6,2,0,.9.9,1.6,1.8,1.6s.1,0,.2,0c.4,0,7.3-.8,12.6-5.4s1.3-.1,1.3.6v15.5c-4.7,12.1-20,12.2-20.2,12.2h0c-1.2,0-2.1,1.2-1.7,2.5s.9,1.1,1.7,1.1h0c.9,0,10.7-.2,17.9-6.4s2.3-.2,2.3,1v15.3c-5.9,15.5-25,14.6-25.8,14.5-1,0-1.8.7-1.9,1.7,0,1,.7,1.8,1.7,1.9,0,0,.4,0,1,0,3.6,0,16-.7,23.8-9.4s1.2-.2,1.2.5v19.1c-2.9,7.7-8.8,12.8-17.7,15.2-6.8,1.9-12.9,1.3-12.9,1.3-1,0-1.9.6-1.9,1.6s.6,1.9,1.6,1.9c.1,0,1.1,0,2.6,0,2.6,0,6.8-.2,11.5-1.5,6.8-1.8,12.2-5.2,15.9-10s.9-.1.9.3v27.2c0,.8.6,1.4,1.4,1.4h.7c.8,0,1.4-.6,1.4-1.4v-27Z";
 
 // Drawn as its own small SVG so it keeps its shape while the ridge beneath it
-// stretches to fit the card.
+// stretches to fit the card. The drawing's lines are fine, so at these small
+// sizes a hairline stroke in the same colour keeps them from fading out.
 function Spruce({ size, color }: { size: number; color: string }) {
   return (
     <svg
-      viewBox="0 0 20 32"
-      width={size * (20 / 32)}
+      viewBox="0.6 0.3 68.01 116.6"
+      width={size * (68.01 / 116.6)}
       height={size}
-      fill="none"
+      fill={color}
       stroke={color}
-      strokeWidth="1"
-      strokeLinecap="round"
+      strokeWidth="0.6"
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d={SPRUCE} vectorEffect="non-scaling-stroke" />
+      <path d={TREE} vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
@@ -302,7 +349,6 @@ export function ElevationDiagram({
 interface Props {
   config: MountainConfig;
   weather: MountainWeather | null;
-  isTallest?: boolean;
   snow?: SnowNow; // snow on the ground, when the resort's report has it
   alert?: SnowAlert | null; // snowfall alert, fallen or forecast
   more?: boolean; // the card links to the hill's page: show the "Full report" footer
@@ -311,7 +357,6 @@ interface Props {
 export default function ElevationVisualizer({
   config,
   weather,
-  isTallest = false,
   snow,
   alert,
   more = false,
@@ -324,7 +369,10 @@ export default function ElevationVisualizer({
       className={`h-full border border-line bg-surface p-5 ${more ? "flex flex-col" : ""}`}
       style={{ borderTop: `3px solid ${config.color}` }}
     >
-        <h2 className="text-lg font-semibold text-ink">{name}</h2>
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-ink">
+          <MountainIcon id={config.id} color={config.color} className="h-3.5 w-5" />
+          {name}
+        </h2>
         <p className="mt-3 text-sm text-muted">
           Weather data is unavailable. It will retry on the next refresh.
         </p>
@@ -349,10 +397,10 @@ export default function ElevationVisualizer({
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-3xl font-bold text-ink">{name}</h2>
-            {isTallest && (
-              <span className="chip bg-ink/10 text-ink">Highest peak</span>
-            )}
+            <h2 className="flex items-center gap-2 text-2xl font-extrabold text-ink">
+              <MountainIcon id={config.id} color={config.color} className="h-4 w-6" />
+              {name}
+            </h2>
             <SnowAlertChip alert={alert} />
           </div>
           <p className="font-sans text-xs tabular-nums text-muted">
@@ -362,7 +410,7 @@ export default function ElevationVisualizer({
           <p className="mt-1 text-sm text-ink-2">{verdict(config, fl, sky)}</p>
         </div>
         <div className="text-right">
-          <p className="font-display text-4xl font-bold tabular-nums text-ink">
+          <p className="font-display text-3xl font-bold tabular-nums text-ink">
             {fl.toLocaleString("en-CA")}
             <span className="ml-0.5 text-sm font-normal text-muted">m</span>
           </p>

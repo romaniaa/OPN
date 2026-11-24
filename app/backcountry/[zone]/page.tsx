@@ -4,7 +4,6 @@ import AvalancheCard from "@/components/AvalancheCard";
 import FreezingChart from "@/components/FreezingChart";
 import PinButton from "@/components/PinButton";
 import RangeIcon from "@/components/RangeIcon";
-import SiteNav from "@/components/SiteNav";
 import { PlaceSnowAlert } from "@/components/SnowAlert";
 import { PageTransition } from "@/components/Transitions";
 import { compass } from "@/components/WindCard";
@@ -69,24 +68,8 @@ export default async function ZonePage({ params }: { params: Promise<{ zone: str
 
   return (
     <>
-      <SiteNav />
       <PageTransition>
-        <main className="min-h-screen px-4 py-8 text-ink md:px-10">
-          <div className="mx-auto max-w-8xl space-y-5">
-            <header className="pb-2">
-              <p className="text-xs uppercase tracking-widest text-muted">Backcountry</p>
-              <h1 className="flex items-center gap-3 text-4xl sm:gap-4 sm:text-5xl md:text-6xl font-bold">
-                <RangeIcon color={zone.color} className="h-8 w-[43px] sm:h-10 sm:w-[54px]" />
-                <span className="min-w-0">{zone.fullName}</span>
-              </h1>
-              <p className="mt-2 max-w-3xl text-ink-2">{zone.description}</p>
-              <div className="mt-4">
-                <PinButton id={zone.id} name={zone.fullName} color={zone.color} size="large" />
-              </div>
-            </header>
-            <ZoneContent zone={zone} />
-          </div>
-        </main>
+        <ZoneContent zone={zone} />
       </PageTransition>
     </>
   );
@@ -174,86 +157,105 @@ async function ZoneContent({ zone }: { zone: ZoneConfig }) {
   const daily = dailyRes.status === "fulfilled" ? dailyRes.value : null;
   const snow = stations ? zoneSnow(stations) : undefined;
 
+  // As on a hill's page: the alert sits outside main, so it can run the full
+  // width of the window right under the nav, and its parent spans the whole
+  // page, so it sticks the whole way down.
   return (
-    <>
+    <div>
       <PlaceSnowAlert
         name={`${zone.fullName} backcountry`}
         snow={snow}
         alert={snowAlert(snow, daily?.days)}
+        bar
       />
-      {forecast ? (
-        <AvalancheCard name={zone.fullName} forecast={forecast} timeZone={zone.timeZone} />
-      ) : (
-        <Unavailable title={`${zone.fullName} avalanche danger`} />
-      )}
-
-      <SectionLabel>Rain and snow line, by elevation</SectionLabel>
-      {now ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <ZoneDiagram zone={zone} now={now} />
-          <div className="lg:col-span-2">
-            <ElevationTable zone={zone} now={now} />
-          </div>
-        </div>
-      ) : (
-        <Unavailable title="Conditions by elevation" />
-      )}
-
-      <SectionLabel>Forecast</SectionLabel>
-      {daily && daily.days.length > 0 ? (
-        <DailyForecast
-          days={daily.days}
-          top={{ label: "Upper", elevation: Math.max(...zone.heights) }}
-          bottom={{ label: "Lower", elevation: Math.min(...zone.heights) }}
-          color={zone.color}
-        />
-      ) : (
-        <Unavailable title="Forecast" />
-      )}
-
-      <SectionLabel>Freezing level</SectionLabel>
-      {freezing ? (
-        <FreezingChart
-          series={freezing}
-          note={`Daily low–high range at ${zone.fullName} · Open-Meteo model`}
-        />
-      ) : (
-        <Unavailable title="Freezing level" />
-      )}
-
-      <SectionLabel>Temperature and wind</SectionLabel>
-      {now ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <ZoneTemperatureChart zone={zone} now={now} />
-          <ZoneWindCard zone={zone} now={now} />
-        </div>
-      ) : (
-        <Unavailable title="Temperature and wind" />
-      )}
-
-      {zone.stations.length > 0 && (
-        <>
-          <SectionLabel>Weather stations</SectionLabel>
-          {stations ? (
-            <ZoneStations stations={stations} now={now} timeZone={zone.timeZone} />
+      <main className="min-h-screen px-4 py-8 text-ink md:px-10">
+        <div className="mx-auto max-w-8xl space-y-5">
+          <header className="page-header">
+            <p className="text-xs uppercase tracking-widest text-muted">Backcountry</p>
+            <h1 className="flex items-center gap-3 text-4xl font-extrabold sm:gap-4 sm:text-5xl md:text-6xl">
+              <RangeIcon color={zone.color} className="h-8 w-[43px] sm:h-10 sm:w-[54px]" />
+              <span className="min-w-0">{zone.fullName}</span>
+            </h1>
+            <p className="mt-2 max-w-3xl text-ink-2">{zone.description}</p>
+            <div className="mt-4">
+              <PinButton id={zone.id} name={zone.fullName} color={zone.color} size="large" />
+            </div>
+          </header>
+          {forecast ? (
+            <AvalancheCard name={zone.fullName} forecast={forecast} timeZone={zone.timeZone} />
           ) : (
-            <Unavailable title="Weather stations" />
+            <Unavailable title={`${zone.fullName} avalanche danger`} />
           )}
-        </>
-      )}
 
-      <footer className="pb-4 pt-2 text-xs text-faint">
-        Avalanche danger ratings from{" "}
-        <a href="https://avalanche.ca" className="underline hover:text-ink">
-          Avalanche Canada
-        </a>
-        . Weather is model estimates, not station observations; the snow line is
-        estimated at 150 m below the freezing level. Weather data by{" "}
-        <a href="https://open-meteo.com" className="underline hover:text-ink">
-          Open-Meteo.com
-        </a>
-        .
-      </footer>
-    </>
+          <SectionLabel>Rain and snow line, by elevation</SectionLabel>
+          {now ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <ZoneDiagram zone={zone} now={now} />
+              <div className="lg:col-span-2">
+                <ElevationTable zone={zone} now={now} />
+              </div>
+            </div>
+          ) : (
+            <Unavailable title="Conditions by elevation" />
+          )}
+
+          <SectionLabel>Forecast</SectionLabel>
+          {daily && daily.days.length > 0 ? (
+            <DailyForecast
+              days={daily.days}
+              top={{ label: "Upper", elevation: Math.max(...zone.heights) }}
+              bottom={{ label: "Lower", elevation: Math.min(...zone.heights) }}
+              color={zone.color}
+            />
+          ) : (
+            <Unavailable title="Forecast" />
+          )}
+
+          <SectionLabel>Freezing level</SectionLabel>
+          {freezing ? (
+            <FreezingChart
+              series={freezing}
+              note={`Daily low–high range at ${zone.fullName} · Open-Meteo model`}
+            />
+          ) : (
+            <Unavailable title="Freezing level" />
+          )}
+
+          <SectionLabel>Temperature and wind</SectionLabel>
+          {now ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <ZoneTemperatureChart zone={zone} now={now} />
+              <ZoneWindCard zone={zone} now={now} />
+            </div>
+          ) : (
+            <Unavailable title="Temperature and wind" />
+          )}
+
+          {zone.stations.length > 0 && (
+            <>
+              <SectionLabel>Weather stations</SectionLabel>
+              {stations ? (
+                <ZoneStations stations={stations} now={now} timeZone={zone.timeZone} />
+              ) : (
+                <Unavailable title="Weather stations" />
+              )}
+            </>
+          )}
+
+          <footer className="pb-4 pt-2 text-xs text-faint">
+            Avalanche danger ratings from{" "}
+            <a href="https://avalanche.ca" className="underline hover:text-ink">
+              Avalanche Canada
+            </a>
+            . Weather is model estimates, not station observations; the snow line is
+            estimated at 150 m below the freezing level. Weather data by{" "}
+            <a href="https://open-meteo.com" className="underline hover:text-ink">
+              Open-Meteo.com
+            </a>
+            .
+          </footer>
+        </div>
+      </main>
+    </div>
   );
 }

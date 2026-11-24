@@ -60,8 +60,8 @@ export default function ZoneDiagram({
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="flex items-center gap-2 text-3xl font-bold text-ink">
-              {details && <RangeIcon color={zone.color} className="h-4 w-6" />}
+            <h2 className="flex items-center gap-2 text-2xl font-extrabold text-ink">
+              <RangeIcon color={zone.color} className="h-4 w-6" />
               {zone.name}
             </h2>
             <SnowAlertChip alert={alert} />
@@ -73,7 +73,7 @@ export default function ZoneDiagram({
         </div>
         {now && (
           <div className="text-right">
-            <p className="font-display text-4xl font-bold tabular-nums text-ink">
+            <p className="font-display text-3xl font-bold tabular-nums text-ink">
               {fmt(now.freezingLevel)}
               <span className="ml-0.5 text-sm font-normal text-muted">m</span>
             </p>

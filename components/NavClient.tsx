@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef } from "react";
+import { type MouseEvent, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import Logo from "@/components/Logo";
 import MountainIcon from "@/components/MountainIcon";
+import MountainsGlyph from "@/components/MountainsGlyph";
+import MyHillsDrawer, {
+  MY_HILLS_DRAWER_ID,
+  openMyHills,
+  usePickerLabel,
+} from "@/components/MyHillsDrawer";
 import RangeIcon from "@/components/RangeIcon";
 import ThemeToggle from "@/components/ThemeToggle";
 import { NAV_BACK, NAV_FADE, NAV_FORWARD } from "@/components/Transitions";
@@ -129,9 +135,15 @@ function PlaceRow({
 
 export default function NavClient({ status }: { status: NavStatus | null }) {
   const pathname = usePathname();
-  const active = activeItem(pathname);
+  // Where a tapped link is heading, so the tabs switch on the tap, the way an
+  // app's do, instead of when the next page has loaded. Dropped once the URL
+  // changes, after which the real pathname takes over.
+  const [pending, setPending] = useState<{ from: string; to: string } | null>(null);
+  const path = pending?.from === pathname ? pending.to : pathname;
+  const active = activeItem(path);
   // My hills' count is unknown on the server, so it appears after hydration.
   const { hydrated, saved } = useDashboard();
+  const pickerLabel = usePickerLabel();
 
   const drawer = useRef<HTMLDialogElement>(null);
   // Next keeps recently visited pages mounted but hidden for instant back and
@@ -143,6 +155,40 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
   useEffect(() => {
     drawer.current?.close();
   }, [pathname]);
+
+  // The desktop tabs share one underline that slides to the current tab. It's
+  // placed by measuring that tab and setting the bar's style directly, so a tap
+  // costs no re-render. It's placed again whenever a tab changes size (the My
+  // hills count appearing, fonts loading), and fades out on pages with no tab.
+  const tabRow = useRef<HTMLDivElement>(null);
+  const underline = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const row = tabRow.current;
+    const bar = underline.current;
+    if (!row || !bar) return;
+    const place = () => {
+      const tab = row.querySelector<HTMLElement>("[data-tab][aria-current='page']");
+      if (!tab) {
+        bar.style.opacity = "0";
+        return;
+      }
+      // Coming from nowhere (first paint, or a page with no tab), it appears in
+      // place rather than sliding in from wherever it last was.
+      const jump = bar.style.opacity !== "1";
+      if (jump) bar.style.transition = "none";
+      bar.style.width = `${tab.offsetWidth}px`;
+      bar.style.translate = `${tab.offsetLeft}px ${tab.offsetTop + tab.offsetHeight - 2}px`;
+      if (jump) {
+        void bar.offsetWidth; // commit the jump before transitions come back
+        bar.style.transition = "";
+      }
+      bar.style.opacity = "1";
+    };
+    place();
+    const resized = new ResizeObserver(place);
+    row.querySelectorAll("[data-tab]").forEach((tab) => resized.observe(tab));
+    return () => resized.disconnect();
+  }, [active]);
 
   const items: { id: ItemId; href: string; label: string; count?: number }[] = [
     { id: "mine", href: "/", label: "My hills", count: hydrated ? saved.length : undefined },
@@ -159,6 +205,16 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
 
   const quick = "orb-pill orb-pill-sm justify-center text-center";
 
+  // Any plain click on a link inside the nav (tabs or drawer) that navigates in
+  // place. Modified clicks open a new tab, so they leave the tabs alone.
+  const onNavClick = (e: MouseEvent<HTMLElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = (e.target as Element).closest("a[href]");
+    if (!(a instanceof HTMLAnchorElement) || a.target === "_blank") return;
+    if (a.origin !== window.location.origin || a.pathname === pathname) return;
+    setPending({ from: pathname, to: a.pathname });
+  };
+
   return (
     // Named so it stays put while the page content slides beneath it. The name
     // makes the nav a stacking context, which would trap the floating bar's z-40
@@ -166,6 +222,7 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
     // above the page.
     <nav
       aria-label="Main"
+      onClick={onNavClick}
       style={{ viewTransitionName: "site-nav" }}
       className="relative z-40 border-b border-line-2 bg-page/70 px-4 md:px-10"
     >
@@ -182,16 +239,20 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
         className="pointer-events-none fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex justify-center px-4 md:hidden"
       >
         <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-edge bg-raised/85 p-1.5 shadow-lg shadow-black/25 backdrop-blur-md">
+          {/* Icons only; the current page's tab grows to show its name. */}
           <Link
             href="/"
             transitionTypes={NAV_BACK}
             aria-current={active === "mine" ? "page" : undefined}
             data-on={active === "mine" || undefined}
-            className="orb-pill min-h-11 border-transparent bg-transparent px-4"
+            className="orb-pill nav-tab min-h-11 border-transparent bg-transparent px-3"
           >
-            My hills
+            <MountainsGlyph className="h-[18px] w-6" />
+            <span className="nav-tab-label">
+              <span>My hills</span>
+            </span>
             {hydrated && saved.length ? (
-              <span className="orb-badge" aria-label={`${saved.length} saved`}>
+              <span className="orb-badge ml-1.5" aria-label={`${saved.length} saved`}>
                 {saved.length}
               </span>
             ) : null}
@@ -202,20 +263,26 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
             aria-controls={drawerId}
             onClick={() => drawer.current?.showModal()}
             aria-label="All hills: every hill and zone, with live conditions"
-            className="orb-pill min-h-11 border-transparent bg-transparent px-4"
+            data-on={path === "/hills" || undefined}
+            className="orb-pill nav-tab min-h-11 border-transparent bg-transparent px-3"
           >
-            <svg viewBox="0 0 16 12" className="h-3 w-4" aria-hidden="true" fill="currentColor">
+            <svg viewBox="0 0 16 12" className="h-3 w-6 shrink-0" aria-hidden="true" fill="currentColor">
               <rect width="16" height="2" rx="1" />
               <rect y="5" width="16" height="2" rx="1" />
               <rect y="10" width="16" height="2" rx="1" />
             </svg>
-            All hills
+            <span className="nav-tab-label">
+              <span>All hills</span>
+            </span>
           </button>
         </div>
       </div>
 
       {/* Larger screens: the tab row. */}
-      <div className="mx-auto hidden max-w-8xl items-center gap-1 overflow-x-auto md:flex">
+      <div
+        ref={tabRow}
+        className="relative mx-auto hidden max-w-8xl items-center gap-1 overflow-x-auto md:flex"
+      >
         <Link href="/" transitionTypes={NAV_BACK} className="mr-4 shrink-0 py-3">
           <Logo className="h-6 w-auto" />
         </Link>
@@ -227,10 +294,10 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
               href={item.href}
               transitionTypes={transitionTo(item.id)}
               aria-current={isActive ? "page" : undefined}
-              className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-3 text-sm ${
-                isActive ? "text-ink" : "border-transparent text-muted hover:text-ink"
+              data-tab
+              className={`flex items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-3 py-3 text-sm transition-colors ${
+                isActive ? "text-ink" : "text-muted hover:text-ink"
               }`}
-              style={isActive ? { borderBottomColor: "var(--ink)" } : undefined}
             >
               {item.label}
               {item.count ? (
@@ -241,8 +308,32 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
             </Link>
           );
         })}
-        <ThemeToggle className="ml-auto" />
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {/* Opens Pick your hills from any page. */}
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls={MY_HILLS_DRAWER_ID}
+            onClick={openMyHills}
+            aria-label={pickerLabel}
+            title={pickerLabel}
+            className="orb orb-sm"
+          >
+            <MountainsGlyph className="h-[13px] w-[18px]" />
+          </button>
+          <ThemeToggle />
+        </div>
+        <span
+          ref={underline}
+          aria-hidden="true"
+          className="nav-underline pointer-events-none absolute top-0 left-0 h-0.5 bg-ink"
+          style={{ opacity: 0 }}
+        />
       </div>
+
+      {/* Pick your hills, from the right. Here in the nav so it's on every
+          page; opened by the button above and by Pick your hills on My hills. */}
+      <MyHillsDrawer />
 
       {/* A modal dialog, rising from the bottom bar as a sheet: it traps focus,
           closes on Escape, makes the page behind inert, and returns focus to the

@@ -8,12 +8,11 @@ import MountainIcon from "@/components/MountainIcon";
 import PinButton from "@/components/PinButton";
 import SnowDepthCard from "@/components/SnowDepthCard";
 import { PlaceSnowAlert } from "@/components/SnowAlert";
-import SiteNav from "@/components/SiteNav";
 import Summary from "@/components/Summary";
 import WebcamGallery from "@/components/WebcamGallery";
 import WindCard from "@/components/WindCard";
 import { PageTransition, SharedTransition } from "@/components/Transitions";
-import { SectionLabel, Unavailable } from "@/components/Ui";
+import { Eyebrow, SectionLabel, Unavailable } from "@/components/Ui";
 import { LIFTS } from "@/config/lifts";
 import { MOUNTAINS, type MountainConfig } from "@/config/mountains";
 import { regionById } from "@/config/regions";
@@ -144,13 +143,8 @@ export default async function MountainPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLd(structuredData(config)) }}
       />
-      <SiteNav />
       <PageTransition>
-        <main className="min-h-screen px-4 py-8 text-ink md:px-10">
-          <div className="mx-auto max-w-8xl space-y-5">
-            <MountainContent config={config} />
-          </div>
-        </main>
+        <MountainContent config={config} />
       </PageTransition>
     </>
   );
@@ -195,10 +189,12 @@ function Intro({
   const cams = (WEBCAMS[config.id]?.cams.length ?? 0) > 0;
 
   return (
-    <p className="mt-3 max-w-3xl text-ink-2">
+    <p className="mt-5 max-w-2xl leading-relaxed text-ink md:text-lg">
       {[now, depth].filter(Boolean).join(" ")}{" "}
-      Below: {cams ? "live webcams, " : ""}rain or snow at each lift and a 7-day
-      forecast for this {config.locality} ski area, updated hourly.
+      <span className="text-muted">
+        Scroll on for {cams ? "the webcams, " : ""}what&apos;s falling at each lift and
+        the 7-day forecast for this {config.locality} ski area. Fresh every hour.
+      </span>
     </p>
   );
 }
@@ -241,46 +237,49 @@ async function MountainContent({ config }: { config: MountainConfig }) {
   const hillSnowNow = hillSnow(snow, snowStation);
   const alert = snowAlert(hillSnowNow, daily?.days);
 
+  // The alert sits outside main, so it can run the full width of the window
+  // right under the nav. Its parent spans the whole page, so it sticks the whole
+  // way down.
   return (
-    <>
-          <PlaceSnowAlert name={config.fullName} snow={hillSnowNow} alert={alert} />
-          <header className="flex flex-wrap items-end justify-between gap-3 pb-2">
-            <div>
-              <h1 className="flex items-center gap-3 text-4xl sm:gap-4 sm:text-5xl md:text-6xl font-bold">
-                <MountainIcon
-                  id={config.id}
-                  color={config.color}
-                  className="h-8 w-[43px] sm:h-10 sm:w-[54px]"
-                />
-                <span className="min-w-0">{config.fullName}</span>
-              </h1>
-              <p className="mt-2 text-sm tabular-nums text-muted">
-                {fmt(low)}–{fmt(high)} m lifts · {fmt(vertical(config))} m
-                vertical · {config.lat.toFixed(3)}°N{" "}
-                {Math.abs(config.lon).toFixed(3)}°W
-              </p>
-              <Intro
-                config={config}
-                sky={weather}
-                freezingLevel={freezingLevel}
-                snow={snow}
-                stationSnow={snowFromStation(snowStation)}
+    <div>
+      <PlaceSnowAlert name={config.fullName} snow={hillSnowNow} alert={alert} bar />
+      <main className="min-h-screen px-4 py-8 text-ink md:px-10">
+        <div className="mx-auto max-w-8xl space-y-6">
+          <header className="page-header">
+            <Eyebrow>
+              {config.locality} · {regionById(config.region).name}
+            </Eyebrow>
+            <h1 className="mt-3 flex items-center gap-3 text-4xl font-extrabold sm:gap-4 sm:text-5xl md:text-6xl">
+              <MountainIcon
+                id={config.id}
+                color={config.color}
+                className="h-8 w-[43px] sm:h-10 sm:w-[54px]"
               />
-              <div className="mt-4">
-                <PinButton id={config.id} name={config.fullName} color={config.color} size="large" />
-              </div>
+              <span className="min-w-0">{config.fullName}</span>
+            </h1>
+            <p className="mt-3 text-sm tabular-nums text-muted">
+              {fmt(low)}–{fmt(high)} m lifts · {fmt(vertical(config))} m vertical ·{" "}
+              {config.lat.toFixed(3)}°N {Math.abs(config.lon).toFixed(3)}°W
+            </p>
+            <Intro
+              config={config}
+              sky={weather}
+              freezingLevel={freezingLevel}
+              snow={snow}
+              stationSnow={snowFromStation(snowStation)}
+            />
+            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <PinButton id={config.id} name={config.fullName} color={config.color} size="large" />
+              {freezing && (
+                <p className="text-xs text-faint">Model data · updated {freezing.updated}</p>
+              )}
             </div>
-            {freezing && (
-              <p className="text-xs text-faint">
-                Model data · updated {freezing.updated}
-              </p>
-            )}
           </header>
 
           {/* Summary and snow depth share a row on desktop. Outside the snow
               season there is no depth card, so the summary takes the full width. */}
           <div
-            className={`grid grid-cols-1 gap-4 ${
+            className={`grid grid-cols-1 gap-5 ${
               inSeason ? "lg:grid-cols-5" : ""
             }`}
           >
@@ -315,13 +314,15 @@ async function MountainContent({ config }: { config: MountainConfig }) {
 
           {webcams && (
             <>
-              <SectionLabel>Webcams</SectionLabel>
+              <SectionLabel note="See it for yourself, live from the hill.">Webcams</SectionLabel>
               <WebcamGallery name={config.name} webcams={webcams} />
             </>
           )}
 
-          <SectionLabel>Rain and snow line, and lifts</SectionLabel>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <SectionLabel note="What's falling at each lift, from the base to the top.">
+            Rain and snow line, and lifts
+          </SectionLabel>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             <SharedTransition name={`resort-${config.id}`}>
               <ElevationVisualizer config={config} weather={weather} snow={hillSnowNow} alert={alert} />
             </SharedTransition>
@@ -339,7 +340,7 @@ async function MountainContent({ config }: { config: MountainConfig }) {
             </div>
           </div>
 
-          <SectionLabel>Forecast</SectionLabel>
+          <SectionLabel note="The week ahead, at the top and at the base.">Forecast</SectionLabel>
           {daily && daily.days.length > 0 ? (
             <DailyForecast
               days={daily.days}
@@ -351,7 +352,7 @@ async function MountainContent({ config }: { config: MountainConfig }) {
             <Unavailable title="Forecast" />
           )}
 
-          <SectionLabel>Freezing level</SectionLabel>
+          <SectionLabel note="Where 0° sits on the mountain, and where it's heading.">Freezing level</SectionLabel>
           {freezing ? (
             <SharedTransition name="freezing">
               <FreezingChart
@@ -363,9 +364,11 @@ async function MountainContent({ config }: { config: MountainConfig }) {
             <Unavailable title="Freezing level" />
           )}
 
-          <SectionLabel>Temperature and wind</SectionLabel>
+          <SectionLabel note="How cold it is at each lift, and how hard it's blowing up top.">
+            Temperature and wind
+          </SectionLabel>
           {stations && topStation ? (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               <LiftTemperatureChart
                 lifts={lifts}
                 stations={stations}
@@ -378,17 +381,17 @@ async function MountainContent({ config }: { config: MountainConfig }) {
             <Unavailable title="Temperature and wind" />
           )}
 
-          <footer className="pb-4 pt-2 text-xs text-faint">
-            Model estimates, not station observations. Snow line is estimated at
-            150 m below the freezing level. Weather data by{" "}
-            <a
-              href="https://open-meteo.com"
-              className="underline hover:text-ink"
-            >
+          <footer className="pb-4 pt-10 text-xs text-faint">
+            Heads up: these are computer-model estimates, not readings from the hill.
+            The snow line is our guess at 150 m below the freezing level. Weather data
+            by{" "}
+            <a href="https://open-meteo.com" className="underline hover:text-ink">
               Open-Meteo.com
             </a>
             .
           </footer>
-    </>
+        </div>
+      </main>
+    </div>
   );
 }

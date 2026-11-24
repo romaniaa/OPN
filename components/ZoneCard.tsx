@@ -41,7 +41,7 @@ export default function ZoneCard({
     <Link
       href={`/backcountry/${zone.id}`}
       transitionTypes={NAV_FORWARD}
-      className="group block h-full transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/60"
+      className="group block h-full transition-shadow hover:shadow-[0_0_0_2px_var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/60"
       style={{ "--accent": zone.color } as CSSProperties}
     >
       <section
@@ -50,7 +50,7 @@ export default function ZoneCard({
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="flex items-center gap-2 text-xl font-bold text-ink">
+            <h3 className="flex items-center gap-2 text-lg font-extrabold text-ink">
               <RangeIcon color={zone.color} className="h-3.5 w-5" />
               <span className="truncate">{zone.fullName}</span>
             </h3>
@@ -63,7 +63,7 @@ export default function ZoneCard({
           </div>
           {now && (
             <div className="shrink-0 text-right">
-              <p className="font-display text-3xl font-bold tabular-nums text-ink">
+              <p className="font-display text-2xl font-bold tabular-nums text-ink">
                 {fmt(now.freezingLevel)}
                 <span className="ml-0.5 text-xs font-normal text-muted">m</span>
               </p>

@@ -71,8 +71,6 @@ export const DASHBOARD_CSS = [
   // flex, matching the wrappers' own class, so a card's controls sit below it.
   ...PLACE_IDS.map((id) => `#dashboard[data-dash~="${id}"] [data-place="${id}"]{display:flex}`),
   ...PLACE_IDS.map((id) => `#dashboard [data-place="${id}"]{order:var(--o-${id},999)}`),
-  // Per-card move and remove controls appear only while editing.
-  "#dashboard:not([data-editing]) .card-actions{display:none}",
   // Placeholders for picked cards that aren't drawn yet, after the drawn ones.
   "#dashboard .dash-skel{display:none;order:1000}",
   "#dashboard[data-pending] .dash-skel{display:block}",

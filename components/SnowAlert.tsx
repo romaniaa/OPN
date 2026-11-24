@@ -73,7 +73,7 @@ function Banner({ children }: { children: ReactNode }) {
   return (
     <section
       role="status"
-      className="plate flex items-start gap-3 border border-line border-l-4 border-l-warm bg-warm/10 p-4"
+      className="flex items-start gap-3 border border-line border-l-4 border-l-warm bg-warm/10 p-4"
     >
       <Snowflake className="mt-0.5 h-5 w-5 shrink-0 text-warm" />
       <div className="min-w-0">
@@ -86,24 +86,50 @@ function Banner({ children }: { children: ReactNode }) {
   );
 }
 
+// The bar version, for the top of a hill's page: full width, right under the
+// nav, and sticky, so it stays in view as the page scrolls. It's opaque (the
+// page colour tinted red) so content doesn't show through as it passes under.
+function Bar({ children }: { children: ReactNode }) {
+  return (
+    <section
+      role="status"
+      className="sticky top-0 z-30 border-b border-warm/30 bg-[color-mix(in_srgb,var(--warm)_12%,var(--page))] px-4 md:px-10"
+    >
+      <div className="mx-auto flex max-w-8xl items-start gap-3 py-3">
+        <Snowflake className="mt-0.5 h-4 w-4 shrink-0 text-warm" />
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm">
+          <h2 className="font-display text-sm font-semibold uppercase tracking-[0.12em] text-warm">
+            Snowfall alert
+          </h2>
+          <div className="space-y-0.5 text-ink-2">{children}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const Cm = ({ cm }: { cm: number }) => (
   <span className="font-semibold tabular-nums text-ink">{cm} cm</span>
 );
 
-// The banner at the top of a hill's or zone's page. Nothing when there's no alert.
+// The banner at the top of a hill's or zone's page: a boxed banner, or with
+// `bar` the full-width sticky bar. Nothing when there's no alert.
 export function PlaceSnowAlert({
   name,
   snow,
   alert,
+  bar = false,
 }: {
   name: string;
   snow: SnowNow | undefined;
   alert: SnowAlert | null;
+  bar?: boolean;
 }) {
   if (!alert) return null;
   const { fallen, forecast } = alert;
+  const Frame = bar ? Bar : Banner;
   return (
-    <Banner>
+    <Frame>
       {fallen != null && snow && (
         <p>
           <Cm cm={fallen} /> of new snow at {name} in the last 24 hours,{" "}
@@ -119,7 +145,7 @@ export function PlaceSnowAlert({
           estimate; see the forecast below.
         </p>
       )}
-    </Banner>
+    </Frame>
   );
 }
 

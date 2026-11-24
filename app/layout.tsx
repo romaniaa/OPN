@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow, Barlow_Condensed, IBM_Plex_Mono } from "next/font/google";
+import { Archivo, IBM_Plex_Mono } from "next/font/google";
+import { Suspense } from "react";
 import SiteFooter from "@/components/SiteFooter";
+import SiteNav from "@/components/SiteNav";
 import Topo from "@/components/Topo";
 import {
   HOME_DESCRIPTION,
@@ -12,16 +14,12 @@ import {
 import { THEME_SCRIPT } from "@/lib/Theme";
 import "./globals.css";
 
-const barlow = Barlow({
-  variable: "--font-barlow",
+// Archivo is variable in weight and width: one file covers body text and the
+// condensed headings (wdth 75, set in globals.css).
+const archivo = Archivo({
+  variable: "--font-archivo",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const barlowCondensed = Barlow_Condensed({
-  variable: "--font-barlow-condensed",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  axes: ["wdth"],
 });
 
 const plexMono = IBM_Plex_Mono({
@@ -50,7 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en-CA"
-      className={`${barlow.variable} ${barlowCondensed.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${archivo.variable} ${plexMono.variable} h-full antialiased`}
       // The theme script sets data-theme before React hydrates.
       suppressHydrationWarning
     >
@@ -59,6 +57,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="relative flex min-h-full flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] font-sans md:pb-0">
         <Topo />
+        {/* In the layout, not each page, so the nav stays mounted across
+            navigations and its tabs can animate from one state to the next. */}
+        <Suspense>
+          <SiteNav />
+        </Suspense>
         {children}
         <SiteFooter />
       </body>

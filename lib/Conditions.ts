@@ -119,13 +119,6 @@ export function vertical(config: MountainConfig) {
   return high - low;
 }
 
-// Id of the mountain whose top lift is highest.
-export function tallestId(configs: MountainConfig[]) {
-  return configs.reduce((a, b) =>
-    extremes(b).high > extremes(a).high ? b : a
-  ).id;
-}
-
 export function fmt(n: number) {
   return n.toLocaleString("en-CA");
 }

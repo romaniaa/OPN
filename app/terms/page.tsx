@@ -72,6 +72,12 @@ export default function TermsPage() {
           Snow reports and webcams belong to the resorts and their providers, and are
           shown or linked as they publish them.
         </li>
+        <li>
+          The My hills icon is{" "}
+          <a href="https://thenounproject.com/icon/mountains-836258/">Mountains</a> by Andrey
+          Vasiliev from the Noun Project, licensed under{" "}
+          <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
+        </li>
       </ul>
       <p>
         Resort and place names, logos and trademarks belong to their owners.{" "}

@@ -76,7 +76,7 @@ export default function SnowDepthCard({
                 <div className="mt-0.5 flex gap-5">
                   {ok.snowfall.map((s) => (
                     <div key={s.label}>
-                      <p className="font-semibold tabular-nums text-ink">{cm(s.cm)} cm</p>
+                      <p className="font-display text-lg font-bold tabular-nums text-ink">{cm(s.cm)} cm</p>
                       <p className="text-xs text-faint">{s.label}</p>
                     </div>
                   ))}
@@ -95,7 +95,7 @@ export default function SnowDepthCard({
             <p className="mt-3 text-xs text-faint">
               Nearby, the {station.name} station ({cm(station.elevation)} m, {station.km} km
               away) reads{" "}
-              <span className="tabular-nums text-ink-2">{cm(reading.snow!)} cm</span>
+              <span className="font-display font-bold tabular-nums text-ink-2">{cm(reading.snow!)} cm</span>
               {/* The time already ends in "a.m." or "p.m.". */}
               {stationTime ? ` at ${stationTime}` : "."}
             </p>
@@ -116,7 +116,7 @@ export default function SnowDepthCard({
                 {cm(reading.snow!)}
                 <span className="ml-1 text-lg text-muted">cm</span>
                 {reading.snow24 != null && reading.snow24 > 0 && (
-                  <span className="ml-3 font-sans text-sm font-semibold text-ink-2">
+                  <span className="ml-3 text-base text-ink-2">
                     +{cm(reading.snow24)} cm in 24 h
                   </span>
                 )}
