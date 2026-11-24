@@ -5,7 +5,7 @@ import { CREATOR_NAME, CREATOR_URL } from "@/components/SiteFooter";
 import { OPEN_GRAPH, SITE_NAME } from "@/lib/Site";
 
 const TITLE = "Privacy Policy";
-const DESCRIPTION = `How ${SITE_NAME} handles your data: no accounts, no cookies, no tracking. Your hills and theme stay in your own browser.`;
+const DESCRIPTION = `How ${SITE_NAME} handles your data: no accounts, no ads, and only aggregate page-view counts. Your hills and theme stay in your own browser.`;
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -16,14 +16,15 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title={TITLE} updated="November 21, 2026">
+    <LegalPage title={TITLE} updated="November 23, 2026">
       <p>
         {SITE_NAME} (openpeaks.ca) is a free ski conditions site run by{" "}
         <a href={CREATOR_URL}>{CREATOR_NAME}</a> in British Columbia, Canada. The
-        short version: there are no accounts, no cookies of our own, no analytics and
-        no ads. We don&apos;t collect your personal information (unless you choose to
-        support the site; see below) and we don&apos;t sell or share anything about
-        you.
+        short version: there are no accounts, no cookies of our own and no ads. We
+        count page views to see which pages get used, with a tool that doesn&apos;t
+        tie them to you. We don&apos;t collect your personal information
+        (unless you choose to support the site; see below) and we don&apos;t sell or
+        share anything about you.
       </p>
 
       <h2>What stays in your browser</h2>
@@ -55,6 +56,27 @@ export default function PrivacyPage() {
         Vercel is based in the United States, so this information may be processed
         outside Canada. See{" "}
         <a href="https://vercel.com/legal/privacy-policy">Vercel&apos;s privacy policy</a>.
+      </p>
+
+      <h2>Page-view counts</h2>
+      <p>
+        We use Vercel Web Analytics to count visits to each page, so we know which
+        hills and pages get used. It doesn&apos;t use third-party cookies. For each
+        page view it records the page, the site you came from, your approximate
+        location (country, region and city), your browser, operating system and
+        device type, and the time.
+      </p>
+      <p>
+        What we see are totals, not individual visitors: the data isn&apos;t tied to
+        you or your IP address. Visits are grouped using a value derived from the
+        request, a visit&apos;s session is discarded after 24 hours, and nothing is
+        kept that would let your browsing be followed across other sites. Anything
+        after a <code>?</code> or <code>#</code> in the page&apos;s address (where a
+        shared My hills list goes) is removed before it&apos;s sent. See{" "}
+        <a href="https://vercel.com/docs/analytics/privacy-policy">
+          Vercel&apos;s Web Analytics privacy notes
+        </a>
+        .
       </p>
 
       <h2>Weather and avalanche data</h2>
@@ -99,8 +121,8 @@ export default function PrivacyPage() {
 
       <h2>Changes</h2>
       <p>
-        If the site starts handling data differently, for example by adding analytics,
-        this page will be updated first and the date at the top will change.
+        If the site starts handling data differently, this page will be updated first
+        and the date at the top will change.
       </p>
 
       <h2>Contact</h2>

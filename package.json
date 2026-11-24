@@ -10,6 +10,7 @@
     "snow:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-snow-reports.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "cheerio": "^1.2.0",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.66.0",

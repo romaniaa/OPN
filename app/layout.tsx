@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, IBM_Plex_Mono } from "next/font/google";
 import { Suspense } from "react";
+import SiteAnalytics from "@/components/SiteAnalytics";
 import SiteFooter from "@/components/SiteFooter";
 import SiteNav from "@/components/SiteNav";
 import Topo from "@/components/Topo";
@@ -64,6 +65,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </Suspense>
         {children}
         <SiteFooter />
+        <SiteAnalytics />
       </body>
     </html>
   );
