@@ -15,6 +15,7 @@ import MountainIcon from "@/components/MountainIcon";
 import { NAV_FADE } from "@/components/Transitions";
 import RangeIcon from "@/components/RangeIcon";
 import { useDashboard } from "@/components/useDashboard";
+import { useSheet } from "@/components/useSheet";
 import { MOUNTAINS, type MountainId } from "@/config/mountains";
 import { REGIONS } from "@/config/regions";
 import { ZONES } from "@/config/zones";
@@ -264,21 +265,19 @@ function YourHills({
 export default function MyHillsDrawer() {
   const { ids, save, toggle, move, remove } = useDashboard();
   const label = usePickerLabel();
-  const drawer = useRef<HTMLDialogElement>(null);
+  const { ref: drawer, open, close } = useSheet();
   const drawerId = MY_HILLS_DRAWER_ID;
-  const close = () => drawer.current?.close();
 
   useEffect(() => {
-    const open = () => drawer.current?.showModal();
     window.addEventListener(OPEN_EVENT, open);
     return () => window.removeEventListener(OPEN_EVENT, open);
-  }, []);
+  }, [open]);
 
   // Close on navigation, including browser back and forward.
   const pathname = usePathname();
   useEffect(() => {
-    drawer.current?.close();
-  }, [pathname]);
+    close();
+  }, [pathname, close]);
 
   const places = GROUPS.flatMap((g) => g.places);
   const picked = ids
@@ -293,7 +292,7 @@ export default function MyHillsDrawer() {
       onClick={(e) => {
         if (e.target === e.currentTarget) close();
       }}
-      className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-none w-full max-w-md border-0 border-l border-line-2 bg-sunken p-0 text-ink shadow-2xl transition-[translate,display,overlay] transition-discrete duration-300 ease-out not-open:translate-x-full starting:open:translate-x-full backdrop:bg-black/50 motion-reduce:transition-none"
+      className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-none w-full max-w-md border-0 border-l border-line-2 bg-sunken p-0 text-ink shadow-2xl transition-[translate] duration-300 ease-out starting:open:translate-x-full data-closing:translate-x-full data-closing:ease-in backdrop:bg-black/50 backdrop:transition-[background-color] backdrop:duration-300 starting:open:backdrop:bg-transparent data-closing:backdrop:bg-transparent motion-reduce:transition-none motion-reduce:backdrop:transition-none"
     >
       <div className="flex h-full flex-col">
         <div className="flex items-start justify-between gap-3 border-b border-line-2 px-5 py-4">

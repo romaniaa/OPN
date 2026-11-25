@@ -15,6 +15,7 @@ import RangeIcon from "@/components/RangeIcon";
 import ThemeToggle from "@/components/ThemeToggle";
 import { NAV_BACK, NAV_FADE, NAV_FORWARD } from "@/components/Transitions";
 import { useDashboard } from "@/components/useDashboard";
+import { useSheet } from "@/components/useSheet";
 import { MOUNTAINS, type MountainId } from "@/config/mountains";
 import { REGIONS, type RegionId } from "@/config/regions";
 import { ZONES } from "@/config/zones";
@@ -145,16 +146,15 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
   const { hydrated, saved } = useDashboard();
   const pickerLabel = usePickerLabel();
 
-  const drawer = useRef<HTMLDialogElement>(null);
+  const { ref: drawer, open, close } = useSheet();
   // Next keeps recently visited pages mounted but hidden for instant back and
   // forward, so several navs can be in the document at once: ids must be unique.
   const drawerId = useId();
-  const close = () => drawer.current?.close();
 
   // Close on navigation, including browser back and forward.
   useEffect(() => {
-    drawer.current?.close();
-  }, [pathname]);
+    close();
+  }, [pathname, close]);
 
   // The desktop tabs share one underline that slides to the current tab. It's
   // placed by measuring that tab and setting the bar's style directly, so a tap
@@ -261,7 +261,7 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
             type="button"
             aria-haspopup="dialog"
             aria-controls={drawerId}
-            onClick={() => drawer.current?.showModal()}
+            onClick={open}
             aria-label="All hills: every hill and zone, with live conditions"
             data-on={path === "/hills" || undefined}
             className="orb-pill nav-tab min-h-11 border-transparent bg-transparent px-3"
@@ -347,7 +347,7 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
         onClick={(e) => {
           if (e.target === e.currentTarget) close();
         }}
-        className="fixed inset-x-0 top-auto bottom-0 m-0 h-[88dvh] max-h-none w-full max-w-none rounded-t-2xl border-0 border-t border-line-2 bg-sunken p-0 pb-[env(safe-area-inset-bottom)] text-ink shadow-2xl transition-[translate,display,overlay] transition-discrete duration-300 ease-out not-open:translate-y-full starting:open:translate-y-full backdrop:bg-black/50 motion-reduce:transition-none"
+        className="fixed inset-x-0 top-auto bottom-0 m-0 h-[88dvh] max-h-none w-full max-w-none rounded-t-2xl border-0 border-t border-line-2 bg-sunken p-0 pb-[env(safe-area-inset-bottom)] text-ink shadow-2xl transition-[translate] duration-300 ease-out starting:open:translate-y-full data-closing:translate-y-full data-closing:ease-in backdrop:bg-black/50 backdrop:transition-[background-color] backdrop:duration-300 starting:open:backdrop:bg-transparent data-closing:backdrop:bg-transparent motion-reduce:transition-none motion-reduce:backdrop:transition-none"
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between gap-3 border-b border-line-2 px-4 py-3">
