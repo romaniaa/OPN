@@ -5,8 +5,7 @@ export interface BubbleRow {
   label: string;
   value: number;
   display?: string;
-  warm?: boolean;
-  color?: string; // mountain accent colour
+  color: string; // the place's accent colour
   mountain?: MountainId;
 }
 
@@ -62,7 +61,7 @@ export default function BubbleChart({
               style={{ height: ROW_H }}
             >
               <span className="flex items-center gap-2">
-                {r.color && r.mountain && (
+                {r.mountain && (
                   <MountainIcon id={r.mountain} color={r.color} className="h-3 w-4" />
                 )}
                 {r.label}
@@ -83,7 +82,7 @@ export default function BubbleChart({
           ))}
           {zeroLine && min < 0 && max > 0 && (
             <div
-              className="absolute inset-y-0 border-l border-[#8b3a3a]"
+              className="absolute inset-y-0 border-l border-warm/50"
               style={{ left: `${pct(0)}%` }}
             />
           )}
@@ -98,37 +97,24 @@ export default function BubbleChart({
               )
           )}
           {/* Each reading is a gauge flag standing on a stem at its value. */}
-          {rows.map(
-            (r, i) =>
-              r.color && (
-                <div
-                  key={`stem-${r.label}`}
-                  className="absolute w-px"
-                  style={{
-                    left: `${pct(r.value)}%`,
-                    top: i * ROW_H,
-                    height: ROW_H,
-                    backgroundColor: r.color,
-                  }}
-                />
-              )
-          )}
+          {rows.map((r, i) => (
+            <div
+              key={`stem-${r.label}`}
+              className="absolute w-px"
+              style={{ left: `${pct(r.value)}%`, top: i * ROW_H, height: ROW_H, backgroundColor: r.color }}
+            />
+          ))}
           {rows.map((r, i) => (
             <div
               key={r.label}
-              className={`absolute flex h-7 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center text-[11px] font-medium tabular-nums text-white ${
-                r.color ? "" : r.warm ? "bg-[#a4612f]/85" : "bg-[#3b4651]"
-              }`}
+              className="absolute flex h-7 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center text-[11px] font-medium tabular-nums text-ink"
               style={{
                 left: `${pct(r.value)}%`,
                 top: i * ROW_H + ROW_H / 2,
-                ...(r.color
-                  ? {
-                      // Opaque base keeps the stem and gridlines from showing through the number.
-                      background: `linear-gradient(${r.color}33, ${r.color}33), #13181d`,
-                      boxShadow: `inset 0 0 0 1px ${r.color}`,
-                    }
-                  : {}),
+                // A tint of the place's colour over the card's own surface, opaque
+                // so the stem and gridlines don't show through the number.
+                background: `linear-gradient(${r.color}33, ${r.color}33), var(--surface)`,
+                boxShadow: `inset 0 0 0 1px ${r.color}`,
               }}
             >
               {r.display ?? r.value}
