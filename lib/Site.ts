@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { MountainConfig } from "@/config/mountains";
 import { WEBCAMS } from "@/config/webcams";
 
@@ -41,3 +42,37 @@ export const mountainDescription = (m: MountainConfig) =>
 // nothing in it can close the script tag.
 export const jsonLd = (data: object) =>
   JSON.stringify(data).replace(/</g, "\\u003c");
+
+// A page's title, description, canonical URL and social preview. The title runs
+// through the layout's template ("… | OpenPeaks"); the preview spells it out,
+// since a page's openGraph replaces the layout's.
+export function pageMetadata({
+  title,
+  description,
+  path,
+}: {
+  title: string;
+  description: string;
+  path: string; // e.g. "/hills"
+}): Metadata {
+  return {
+    title,
+    description,
+    alternates: { canonical: path },
+    openGraph: { ...OPEN_GRAPH, title: `${title} | ${SITE_NAME}`, description, url: path },
+  };
+}
+
+// The trail of pages above this one, from the home page, for structured data.
+export function breadcrumbs(trail: { name: string; path: string }[], id?: string) {
+  return {
+    "@type": "BreadcrumbList",
+    ...(id && { "@id": id }),
+    itemListElement: [{ name: HOME_TITLE, path: "/" }, ...trail].map((t, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: t.name,
+      item: `${SITE_URL}${t.path}`,
+    })),
+  };
+}

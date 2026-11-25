@@ -5,6 +5,8 @@
 // the arrow, the arrow fills. Leaving runs it backwards: the arrow empties, then
 // the route draws back. A tap fills both at once, before the page changes.
 // The card's link is the `group`; this adds no link of its own.
+import { NextArrow } from "@/components/Icons";
+
 export default function CardMore({ label = "Full report" }: { label?: string }) {
   return (
     <div className="mt-auto pt-4">
@@ -22,17 +24,7 @@ export default function CardMore({ label = "Full report" }: { label?: string }) 
           aria-hidden="true"
           className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-edge bg-raised text-[var(--accent)] transition delay-0 duration-200 group-hover:translate-x-1 group-hover:delay-[400ms] group-focus-visible:delay-[400ms] group-active:delay-0 group-hover:border-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-on-fill group-focus-visible:border-[var(--accent)] group-focus-visible:bg-[var(--accent)] group-focus-visible:text-on-fill group-active:border-[var(--accent)] group-active:bg-[var(--accent)] group-active:text-on-fill motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
         >
-          <svg
-            viewBox="0 0 16 16"
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 8h10M9 4l4 4-4 4" />
-          </svg>
+          <NextArrow className="h-4 w-4" />
         </span>
       </div>
     </div>

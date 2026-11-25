@@ -1,115 +1,45 @@
-import type { Metadata } from "next";
-import HillCard from "@/components/HillCard";
-import PinButton from "@/components/PinButton";
-import ZoneCard from "@/components/ZoneCard";
-import { SnowAlertBanner } from "@/components/SnowAlert";
-import { NAV_FORWARD, PageTransition } from "@/components/Transitions";
-import { SectionLabel } from "@/components/Ui";
-import { MOUNTAINS } from "@/config/mountains";
-import { REGIONS } from "@/config/regions";
 import Link from "next/link";
-import { ZONES } from "@/config/zones";
+import { Page, PageFooter, PageHeader } from "@/components/Page";
+import PlaceGrid from "@/components/PlaceGrid";
+import { SnowAlertBanner } from "@/components/SnowAlert";
+import { NAV_FORWARD } from "@/components/Transitions";
+import { AvalancheCanada, OpenMeteo } from "@/components/Ui";
+import { PLACES, PLACES_BY_REGION } from "@/lib/Place";
 import { getPlacesNow } from "@/lib/Places";
-import { OPEN_GRAPH, SITE_NAME } from "@/lib/Site";
+import { pageMetadata } from "@/lib/Site";
 
-const TITLE = "Ski & Backcountry Conditions in BC and the Rockies";
-const DESCRIPTION =
-  "Temperature, snow depth, rain or snow and freezing level right now at ski hills from the North Shore and Whistler to Vancouver Island, the Okanagan, the Kootenays and the Rockies, plus avalanche danger for the backcountry. Updated hourly.";
-
-export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
-  alternates: { canonical: "/hills" },
-  openGraph: {
-    ...OPEN_GRAPH,
-    title: `${TITLE} | ${SITE_NAME}`,
-    description: DESCRIPTION,
-    url: "/hills",
-  },
-};
+export const metadata = pageMetadata({
+  title: "Ski & Backcountry Conditions in BC and the Rockies",
+  description:
+    "Temperature, snow depth, rain or snow and freezing level right now at ski hills from the North Shore and Whistler to Vancouver Island, the Okanagan, the Kootenays and the Rockies, plus avalanche danger for the backcountry. Updated hourly.",
+  path: "/hills",
+});
 
 export default async function HillsPage() {
-  const { now, avalanche, snow, alerts } = await getPlacesNow();
+  const data = await getPlacesNow();
 
   return (
-    <>
-      <PageTransition>
-        <main className="min-h-screen px-4 py-8 text-ink md:px-10">
-          <div className="mx-auto max-w-8xl space-y-5">
-            <header className="page-header">
-              <h1 className="text-4xl font-extrabold sm:text-5xl md:text-6xl">All hills and backcountry</h1>
-              <p className="mt-2 max-w-3xl text-ink-2">
-                Current conditions at every ski area and backcountry zone we cover,
-                grouped by region. Open one for its freezing-level forecast, and lifts
-                or avalanche danger.{" "}
-                <Link href="/" transitionTypes={NAV_FORWARD} className="underline hover:text-ink">
-                  Pick your favourites for My hills
-                </Link>
-                .
-              </p>
-            </header>
+    <Page>
+      <PageHeader title="All hills and backcountry">
+        <p className="mt-2 max-w-3xl text-ink-2">
+          Current conditions at every ski area and backcountry zone we cover, grouped by
+          region. Open one for its freezing-level forecast, and lifts or avalanche danger.{" "}
+          <Link href="/" transitionTypes={NAV_FORWARD} className="underline hover:text-ink">
+            Pick your favourites for My hills
+          </Link>
+          .
+        </p>
+      </PageHeader>
 
-            <SnowAlertBanner
-              hills={MOUNTAINS.map((m) => ({ config: m, alert: alerts[m.id] }))}
-              zones={ZONES.map((z) => ({ config: z, alert: alerts[z.id] }))}
-            />
+      <SnowAlertBanner places={PLACES} alerts={data.alerts} />
 
-            {REGIONS.map((region) => {
-              const hills = MOUNTAINS.filter((m) => m.region === region.id);
-              const zones = ZONES.filter((z) => z.region === region.id);
-              if (hills.length + zones.length === 0) return null;
-              return (
-                <section key={region.id} className="space-y-4">
-                  <SectionLabel>{region.name}</SectionLabel>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {hills.map((m) => (
-                      <div key={m.id} className="flex flex-col gap-2">
-                        <div className="flex-1">
-                          <HillCard
-                            config={m}
-                            now={now?.[m.id] ?? null}
-                            snow={snow[m.id]}
-                            alert={alerts[m.id]}
-                          />
-                        </div>
-                        <PinButton id={m.id} name={m.fullName} color={m.color} />
-                      </div>
-                    ))}
-                    {zones.map((z) => (
-                      <div key={z.id} className="flex flex-col gap-2">
-                        <div className="flex-1">
-                          <ZoneCard
-                            zone={z}
-                            now={now?.[z.id] ?? null}
-                            forecast={avalanche[z.id] ?? null}
-                            snow={snow[z.id]}
-                            alert={alerts[z.id]}
-                          />
-                        </div>
-                        <PinButton id={z.id} name={z.fullName} color={z.color} />
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
+      <PlaceGrid groups={PLACES_BY_REGION} data={data} />
 
-            <footer className="pb-4 pt-2 text-xs text-faint">
-              Avalanche danger from{" "}
-              <a href="https://avalanche.ca" className="underline hover:text-ink">
-                Avalanche Canada
-              </a>
-              ; open a zone for the link to its full forecast. Weather is model
-              estimates, not station observations. Snow line is estimated at
-              150 m below the freezing level. Weather data by{" "}
-              <a href="https://open-meteo.com" className="underline hover:text-ink">
-                Open-Meteo.com
-              </a>
-              .
-            </footer>
-          </div>
-        </main>
-      </PageTransition>
-    </>
+      <PageFooter>
+        Avalanche danger from <AvalancheCanada />; open a zone for the link to its full
+        forecast. Weather is model estimates, not station observations. Snow line is
+        estimated at 150 m below the freezing level. Weather data by <OpenMeteo />.
+      </PageFooter>
+    </Page>
   );
 }

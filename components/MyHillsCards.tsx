@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, type CSSProperties, type ReactNode } from "react";
+import { useEffect } from "react";
+import { CardLink } from "@/components/CardLink";
 import ElevationVisualizer from "@/components/ElevationVisualizer";
-import { NAV_FORWARD, SharedTransition } from "@/components/Transitions";
+import { SharedTransition } from "@/components/Transitions";
 import { useDashboard } from "@/components/useDashboard";
 import ZoneDiagram from "@/components/ZoneDiagram";
-import { MOUNTAINS } from "@/config/mountains";
-import { ZONES } from "@/config/zones";
 import type { AvalancheForecast } from "@/lib/Danger";
+import { placeById } from "@/lib/Place";
 import { weatherFrom, type HillNow } from "@/lib/PlaceWeather";
 import type { SnowAlert } from "@/lib/SnowAlert";
 import type { SnowNow } from "@/lib/SnowNow";
@@ -22,52 +21,32 @@ export interface CardData {
   alert?: SnowAlert;
 }
 
-// The whole card links to the place's page, with the overview's hover.
-function CardLink({ href, color, children }: { href: string; color: string; children: ReactNode }) {
-  return (
-    <Link
-      href={href}
-      transitionTypes={NAV_FORWARD}
-      className="group block flex-1 transition-shadow hover:shadow-[0_0_0_2px_var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/60"
-      style={{ "--accent": color } as CSSProperties}
-    >
-      {children}
-    </Link>
-  );
-}
-
 function PlaceCard({ id, data }: { id: string; data: CardData | undefined }) {
-  const m = MOUNTAINS.find((x) => x.id === id);
-  if (m) {
-    return (
-      <div data-place={id} className="flex flex-col">
-        <CardLink href={`/${m.id}`} color={m.color}>
-          <SharedTransition name={`resort-${m.id}`}>
+  const place = placeById(id);
+  if (!place) return null;
+  return (
+    <div data-place={id} className="flex flex-col">
+      <CardLink place={place}>
+        {place.kind === "hill" ? (
+          <SharedTransition name={`resort-${id}`}>
             <ElevationVisualizer
-              config={m}
-              weather={data?.now ? weatherFrom(data.now, m) : null}
+              config={place.config}
+              weather={data?.now ? weatherFrom(data.now, place.config) : null}
               snow={data?.snow}
               alert={data?.alert}
               more
             />
           </SharedTransition>
-        </CardLink>
-      </div>
-    );
-  }
-  const z = ZONES.find((x) => x.id === id);
-  if (!z) return null;
-  return (
-    <div data-place={id} className="flex flex-col">
-      <CardLink href={`/backcountry/${z.id}`} color={z.color}>
-        <ZoneDiagram
-          zone={z}
-          now={data?.now ?? null}
-          forecast={data?.avalanche ?? null}
-          snow={data?.snow}
-          alert={data?.alert}
-          more
-        />
+        ) : (
+          <ZoneDiagram
+            zone={place.config}
+            now={data?.now ?? null}
+            forecast={data?.avalanche ?? null}
+            snow={data?.snow}
+            alert={data?.alert}
+            more
+          />
+        )}
       </CardLink>
     </div>
   );

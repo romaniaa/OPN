@@ -1,6 +1,8 @@
-import { Card } from "@/components/Ui";
+import ConditionChip from "@/components/ConditionChip";
+import { Card, CardTitle } from "@/components/Ui";
 import type { Lift } from "@/config/lifts";
-import { CONDITION, conditionAt, fmt } from "@/lib/Conditions";
+import { conditionAt } from "@/lib/Conditions";
+import { fmt } from "@/lib/Format";
 import type { StationReading } from "@/lib/Forecast";
 
 function Station({
@@ -15,22 +17,12 @@ function Station({
   const s = elevation == null ? undefined : stations.find((x) => x.elevation === elevation);
   if (elevation == null || !s) return <span className="text-faint">—</span>;
 
-  const c = conditionAt(elevation, freezingLevel, {
-    precipitation: s.precipitation,
-    cloud: s.cloud,
-    code: s.code,
-  });
-
   return (
     <div>
       <p className="text-xs tabular-nums text-faint">~{fmt(elevation)} m</p>
       <div className="mt-1 flex items-center gap-2">
         <span className="w-12 tabular-nums text-ink">{s.temp}°</span>
-        <span
-          className={`chip ${CONDITION[c].chip}`}
-        >
-          {CONDITION[c].label}
-        </span>
+        <ConditionChip condition={conditionAt(elevation, freezingLevel, s)} />
       </div>
     </div>
   );
@@ -49,10 +41,12 @@ export default function LiftTable({
 }) {
   return (
     <Card className="overflow-x-auto">
-      <h3 className="font-semibold text-ink">Lifts</h3>
-      <p className="mb-4 mt-1 text-xs text-muted">
-        Temperature and conditions at the bottom and top station of each lift
-      </p>
+      <CardTitle
+        note="Temperature and conditions at the bottom and top station of each lift"
+        className="mb-4"
+      >
+        Lifts
+      </CardTitle>
       <table className="w-full min-w-[620px] text-left text-sm">
         <thead>
           <tr className="text-xs text-muted">

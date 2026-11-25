@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, type MouseEvent } from "react";
 
 // Opening and closing for a modal <dialog> drawn as a sliding sheet.
 //
@@ -13,6 +14,10 @@ import { useCallback, useEffect, useRef } from "react";
 // single frame. So closing marks the dialog data-closing instead, which CSS
 // slides out and fades, and calls close() once that transition ends. Escape is
 // routed the same way, through the dialog's cancel event.
+//
+// It also closes on navigation (browser back and forward included), and when the
+// backdrop is tapped: spread `onClick` on the dialog, since a tap outside the
+// panel lands on the dialog element itself.
 export function useSheet() {
   const ref = useRef<HTMLDialogElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -77,5 +82,17 @@ export function useSheet() {
     };
   }, [close]);
 
-  return { ref, open, close };
+  const pathname = usePathname();
+  useEffect(() => {
+    close();
+  }, [pathname, close]);
+
+  const onClick = useCallback(
+    (e: MouseEvent<HTMLDialogElement>) => {
+      if (e.target === e.currentTarget) close();
+    },
+    [close]
+  );
+
+  return { ref, open, close, onClick };
 }

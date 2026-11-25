@@ -119,10 +119,6 @@ export function vertical(config: MountainConfig) {
   return high - low;
 }
 
-export function fmt(n: number) {
-  return n.toLocaleString("en-CA");
-}
-
 // What is happening at an elevation right now: precipitation type if it's precipitating,
 // otherwise the sky. Without `sky` it falls back to the precipitation type alone.
 export function conditionAt(

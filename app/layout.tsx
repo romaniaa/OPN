@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import SiteAnalytics from "@/components/SiteAnalytics";
 import SiteFooter from "@/components/SiteFooter";
 import SiteNav from "@/components/SiteNav";
+import Sprites from "@/components/Sprites";
 import Topo from "@/components/Topo";
 import {
   HOME_DESCRIPTION,
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="relative flex min-h-full flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] font-sans md:pb-0">
+        <Sprites />
         <Topo />
         {/* In the layout, not each page, so the nav stays mounted across
             navigations and its tabs can animate from one state to the next. */}

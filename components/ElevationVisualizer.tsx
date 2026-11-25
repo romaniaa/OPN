@@ -1,23 +1,31 @@
 import CardMore from "@/components/CardMore";
-import { SnowStat, StatStrip, TempStat } from "@/components/CardStats";
-import MountainIcon from "@/components/MountainIcon";
-import { SnowAlertChip } from "@/components/SnowAlert";
+import { ConditionStrip, Readouts } from "@/components/CardStats";
+import { PlaceCardHeader } from "@/components/PlaceCard";
+import ConditionChip from "@/components/ConditionChip";
+import { Card, NoWeather } from "@/components/Ui";
 import type { Landmark, MountainConfig } from "@/config/mountains";
-import { roundCorners, seeded, yAt } from "@/lib/Sketch";
+import {
+  TREE_ASPECT,
+  TREE_ID,
+  TREE_VIEWBOX,
+  polylinePath,
+  roundCorners,
+  seeded,
+  yAt,
+} from "@/lib/Sketch";
 import type { SnowAlert } from "@/lib/SnowAlert";
 import type { SnowNow } from "@/lib/SnowNow";
 import type { MountainWeather } from "@/lib/PlaceWeather";
 import {
-  CONDITION,
   PRECIP,
   SNOW_LINE_OFFSET,
-  extremes,
-  fmt,
   conditionAt,
+  extremes,
   verdict,
   vertical,
   type Sky,
 } from "@/lib/Conditions";
+import { fmt, precipRate } from "@/lib/Format";
 
 // How far back from each corner the ridge lines start to round, in % of the
 // diagram.
@@ -106,7 +114,7 @@ function Ridge({
 }) {
   // Heights count up from the bottom; SVG y counts down from the top.
   const line = (pts: [number, number][]) =>
-    pts.map(([x, h], i) => `${i ? "L" : "M"}${x.toFixed(2)} ${(100 - h).toFixed(2)}`).join("");
+    polylinePath(pts.map(([x, h]) => [x, 100 - h]), 2);
   const faint = (d: string, opacity: number, key: string) => (
     <path
       key={key}
@@ -194,27 +202,21 @@ function placeTrees(key: string, ridge: [number, number][]): Tree[] {
   return trees;
 }
 
-// Line-drawn tree: a trunk with four pairs of sweeping branches. The viewBox is
-// cropped to the drawing, so the foot of the trunk sits on the ground line.
-const TREE =
-  "M36.1,88.6c0-.5.7-.8,1-.4,3.8,4.7,9.1,8,15.8,9.8,4.6,1.2,8.9,1.5,11.5,1.5s2.5,0,2.6,0c1,0,1.7-1,1.6-1.9s-1-1.7-1.9-1.6c0,0-6.1.5-12.9-1.3-8.8-2.4-14.7-7.5-17.7-15.2v-19.1c0-.7.8-.9,1.2-.5,7.8,8.7,20.3,9.4,23.8,9.4s1,0,1,0c1,0,1.7-.9,1.7-1.9,0-1-.9-1.7-1.9-1.7-.2,0-19.9,1.1-25.8-14.5v-15.3c0-1.2,1.4-1.8,2.3-1,7.1,6.2,17,6.4,17.9,6.4h0c1,0,1.8-.8,1.8-1.8,0-1-.8-1.8-1.8-1.8h0c-.3,0-15.6-.1-20.2-12.2v-15.5c0-.7.8-1,1.3-.6,5.3,4.6,12.2,5.4,12.6,5.4,0,0,.1,0,.2,0,.9,0,1.7-.7,1.8-1.6.1-1-.6-1.9-1.6-2-.1,0-11.2-1.3-14.4-10,0,0,0,0,0,0,0,0,0,0,0,0,0-.1-.1-.2-.2-.3,0,0,0-.2-.2-.2,0,0,0,0,0,0,0,0-.2-.1-.2-.2,0,0-.2-.1-.3-.2,0,0,0,0,0,0,0,0,0,0,0,0,0,0-.2,0-.2,0-.1,0-.2,0-.3,0,0,0,0,0,0,0s0,0,0,0c-.1,0-.2,0-.3,0,0,0-.2,0-.3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0-.2.1-.2.2,0,0,0,0,0,0,0,0-.2,0-.2.2,0,0,0,0,0,0,0,0-.1.2-.2.2,0,0,0,0,0,0,0,0-.1.2-.2.3,0,0,0,0,0,0,0,0,0,0,0,0-3.2,8.7-14.2,10-14.4,10-1,.1-1.7,1-1.6,2,0,.9.9,1.6,1.8,1.6s.1,0,.2,0c.4,0,7.3-.8,12.6-5.4s1.3-.1,1.3.6v15.5c-4.7,12.1-20,12.2-20.2,12.2h0c-1.2,0-2.1,1.2-1.7,2.5s.9,1.1,1.7,1.1h0c.9,0,10.7-.2,17.9-6.4s2.3-.2,2.3,1v15.3c-5.9,15.5-25,14.6-25.8,14.5-1,0-1.8.7-1.9,1.7,0,1,.7,1.8,1.7,1.9,0,0,.4,0,1,0,3.6,0,16-.7,23.8-9.4s1.2-.2,1.2.5v19.1c-2.9,7.7-8.8,12.8-17.7,15.2-6.8,1.9-12.9,1.3-12.9,1.3-1,0-1.9.6-1.9,1.6s.6,1.9,1.6,1.9c.1,0,1.1,0,2.6,0,2.6,0,6.8-.2,11.5-1.5,6.8-1.8,12.2-5.2,15.9-10s.9-.1.9.3v27.2c0,.8.6,1.4,1.4,1.4h.7c.8,0,1.4-.6,1.4-1.4v-27Z";
-
 // Drawn as its own small SVG so it keeps its shape while the ridge beneath it
-// stretches to fit the card. The drawing's lines are fine, so at these small
-// sizes a hairline stroke in the same colour keeps them from fading out.
+// stretches to fit the card. The drawing is a symbol the layout puts on every
+// page once (components/Sprites.tsx): a card has a dozen trees, so inlining the
+// path in each would add kilobytes per card to the HTML.
 function Spruce({ size, color }: { size: number; color: string }) {
   return (
     <svg
-      viewBox="0.6 0.3 68.01 116.6"
-      width={size * (68.01 / 116.6)}
+      viewBox={TREE_VIEWBOX}
+      width={size * TREE_ASPECT}
       height={size}
       fill={color}
       stroke={color}
-      strokeWidth="0.6"
-      strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d={TREE} vectorEffect="non-scaling-stroke" />
+      <use href={`#${TREE_ID}`} />
     </svg>
   );
 }
@@ -323,16 +325,9 @@ export function ElevationDiagram({
               style={{ bottom: `${Math.min(91, Math.max(9, pct(l.elevation)))}%` }}
             >
               <span className="bg-scene-label/90 px-2 py-1 text-ink">
-                {l.name}{" "}
-                <span className="tabular-nums text-muted">
-                  {l.elevation} m
-                </span>
+                {l.name} <span className="tabular-nums text-muted">{fmt(l.elevation)} m</span>
               </span>
-              <span
-                className={`chip ${CONDITION[p].chip}`}
-              >
-                {CONDITION[p].label}
-              </span>
+              <ConditionChip condition={p} />
             </div>
           );
         })}
@@ -354,6 +349,8 @@ interface Props {
   more?: boolean; // the card links to the hill's page: show the "Full report" footer
 }
 
+// A hill's rain-and-snow-line card: the freezing level, temperature at the top
+// and bottom lifts, and the elevation diagram.
 export default function ElevationVisualizer({
   config,
   weather,
@@ -361,110 +358,64 @@ export default function ElevationVisualizer({
   alert,
   more = false,
 }: Props) {
-  const { minElevation, maxElevation, landmarks, name, profile } = config;
-
-  if (!weather) {
-    return (
-      <section
-      className={`h-full border border-line bg-surface p-5 ${more ? "flex flex-col" : ""}`}
-      style={{ borderTop: `3px solid ${config.color}` }}
-    >
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-ink">
-          <MountainIcon id={config.id} color={config.color} className="h-3.5 w-5" />
-          {name}
-        </h2>
-        <p className="mt-3 text-sm text-muted">
-          Weather data is unavailable. It will retry on the next refresh.
-        </p>
-        {more && <CardMore />}
-      </section>
-    );
-  }
-
-  const fl = weather.freezingLevel;
-  const snowLine = fl - SNOW_LINE_OFFSET;
-  const sky = {
-    precipitation: weather.precipitation,
-    cloud: weather.cloud,
-    code: weather.code,
-  };
+  const { low, high } = extremes(config);
 
   return (
-    <section
-      className={`h-full border border-line bg-surface p-5 ${more ? "flex flex-col" : ""}`}
-      style={{ borderTop: `3px solid ${config.color}` }}
+    <Card
+      accent={config.color}
+      plate={false}
+      className={`h-full ${more ? "flex flex-col" : ""}`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="flex items-center gap-2 text-2xl font-extrabold text-ink">
-              <MountainIcon id={config.id} color={config.color} className="h-4 w-6" />
-              {name}
-            </h2>
-            <SnowAlertChip alert={alert} />
-          </div>
-          <p className="font-sans text-xs tabular-nums text-muted">
-            {fmt(extremes(config).low)}–{fmt(extremes(config).high)} m lifts ·{" "}
-            {fmt(vertical(config))} m vertical
+      <PlaceCardHeader
+        place={{ kind: "hill", id: config.id, color: config.color }}
+        name={config.name}
+        alert={alert}
+        freezingLevel={weather?.freezingLevel}
+      >
+        <p className="font-sans text-xs tabular-nums text-muted">
+          {fmt(low)}–{fmt(high)} m lifts · {fmt(vertical(config))} m vertical
+        </p>
+        {weather && (
+          <p className="mt-1 text-sm text-ink-2">
+            {verdict(config, weather.freezingLevel, weather)}
           </p>
-          <p className="mt-1 text-sm text-ink-2">{verdict(config, fl, sky)}</p>
-        </div>
-        <div className="text-right">
-          <p className="font-display text-3xl font-bold tabular-nums text-ink">
-            {fl.toLocaleString("en-CA")}
-            <span className="ml-0.5 text-sm font-normal text-muted">m</span>
-          </p>
-          <p className="text-xs text-muted">Freezing level</p>
-        </div>
-      </div>
+        )}
+      </PlaceCardHeader>
 
-      <StatStrip>
-        {(
-          [
-            ["Top lift", config.lifts.top.elevation, weather.temps.top],
-            ["Lowest lift", config.lifts.bottom.elevation, weather.temps.bottom],
-          ] as const
-        ).map(([label, elevation, temp]) => (
-          <TempStat
-            key={label}
-            label={label}
-            elevation={elevation}
-            temp={temp}
-            condition={conditionAt(elevation, fl, sky)}
+      {weather ? (
+        <>
+          <ConditionStrip
+            heights={[
+              { label: "Top lift", elevation: high, temp: weather.temps.top },
+              { label: "Lowest lift", elevation: low, temp: weather.temps.bottom },
+            ]}
+            freezingLevel={weather.freezingLevel}
+            sky={weather}
+            snow={snow}
           />
-        ))}
-        {snow && <SnowStat snow={snow} />}
-      </StatStrip>
-
-      <ElevationDiagram
-        id={config.id}
-        name={name}
-        min={minElevation}
-        max={maxElevation}
-        profile={profile}
-        landmarks={landmarks}
-        color={config.color}
-        freezingLevel={fl}
-        sky={sky}
-      />
-
-      <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
-        <div>
-          <dt className="text-xs text-muted">Precip</dt>
-          <dd className="tabular-nums text-ink">
-            {weather.precipitation > 0 ? `${weather.precipitation} mm/h` : "None"}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted">Wind</dt>
-          <dd className="tabular-nums text-ink">{weather.wind} km/h</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted">Snow line (est.)</dt>
-          <dd className="tabular-nums text-ink">~{snowLine} m</dd>
-        </div>
-      </dl>
+          <ElevationDiagram
+            id={config.id}
+            name={config.name}
+            min={config.minElevation}
+            max={config.maxElevation}
+            profile={config.profile}
+            landmarks={config.landmarks}
+            color={config.color}
+            freezingLevel={weather.freezingLevel}
+            sky={weather}
+          />
+          <Readouts
+            items={[
+              ["Precip", precipRate(weather.precipitation)],
+              ["Wind", `${weather.wind} km/h`],
+              ["Snow line (est.)", `~${fmt(weather.freezingLevel - SNOW_LINE_OFFSET)} m`],
+            ]}
+          />
+        </>
+      ) : (
+        <NoWeather />
+      )}
       {more && <CardMore />}
-    </section>
+    </Card>
   );
 }

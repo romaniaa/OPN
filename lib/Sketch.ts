@@ -16,6 +16,13 @@ export function seeded(key: string) {
 
 type Pt = [number, number];
 
+// The tree on the hill diagrams, a symbol drawn once per page
+// (components/Sprites.tsx). Its viewBox is cropped to the drawing, so the foot
+// of the trunk sits on the ground line.
+export const TREE_ID = "opn-tree";
+export const TREE_VIEWBOX = "0.6 0.3 68.01 116.6";
+export const TREE_ASPECT = 68.01 / 116.6; // width per unit of height
+
 // An open polyline with its corners rounded: each corner becomes a curve that
 // starts up to `radius` back along both sides (half the side, on short ones, so
 // neighbouring curves never overlap), sampled into points. On a line running
@@ -50,4 +57,23 @@ export function yAt(pts: Pt[], x: number) {
     if (x <= x1) return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0 || 1);
   }
   return pts[pts.length - 1][1];
+}
+
+// A polyline as compact SVG path data: an absolute start, then each step
+// relative to the last ("l2-1 3 0…"), to `decimals` places, skipping repeats.
+// Short relative numbers are about half the size of absolute ones and compress
+// far better. Steps are taken between the rounded points, so rounding never
+// accumulates along the line.
+export function polylinePath(pts: Pt[], decimals = 0): string {
+  const k = 10 ** decimals;
+  const r = pts.map(([x, y]) => [Math.round(x * k), Math.round(y * k)]);
+  const n = (v: number) => String(v / k);
+  const steps: string[] = [];
+  for (let i = 1; i < r.length; i++) {
+    const dx = r[i][0] - r[i - 1][0];
+    const dy = r[i][1] - r[i - 1][1];
+    if (dx || dy) steps.push(`${n(dx)} ${n(dy)}`);
+  }
+  const d = `M${n(r[0][0])} ${n(r[0][1])}${steps.length ? `l${steps.join(" ")}` : ""}`;
+  return d.replace(/ -/g, "-");
 }

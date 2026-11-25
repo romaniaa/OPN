@@ -1,27 +1,30 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import AvalancheCard from "@/components/AvalancheCard";
+import DailyForecast from "@/components/DailyForecast";
 import FreezingChart from "@/components/FreezingChart";
+import { Page, PageFooter, PageHeader, TITLE_ICON } from "@/components/Page";
 import PinButton from "@/components/PinButton";
 import RangeIcon from "@/components/RangeIcon";
 import { PlaceSnowAlert } from "@/components/SnowAlert";
 import { PageTransition } from "@/components/Transitions";
-import { compass } from "@/components/WindCard";
+import ConditionChip from "@/components/ConditionChip";
+import { AvalancheCanada, Card, CardTitle, OpenMeteo, SectionLabel, Unavailable } from "@/components/Ui";
 import ZoneDiagram from "@/components/ZoneDiagram";
-import ZoneTemperatureChart from "@/components/ZoneTemperatureChart";
 import ZoneStations from "@/components/ZoneStations";
+import ZoneTemperatureChart from "@/components/ZoneTemperatureChart";
 import ZoneWindCard from "@/components/ZoneWindCard";
-import { Card, SectionLabel, Unavailable } from "@/components/Ui";
 import { ZONES, type ZoneConfig } from "@/config/zones";
 import { getAvalancheForecast } from "@/lib/Avalanche";
+import { conditionAt } from "@/lib/Conditions";
+import { getDailyForecast, getFreezingSeries } from "@/lib/Forecast";
+import { compass, fmt, precipRate, round1 } from "@/lib/Format";
+import { tempAt, windAloft } from "@/lib/Model";
+import { settle } from "@/lib/Settle";
+import { pageMetadata } from "@/lib/Site";
 import { snowAlert } from "@/lib/SnowAlert";
 import { zoneSnow } from "@/lib/SnowNow";
 import { getZoneStations } from "@/lib/Stations";
-import { CONDITION, conditionAt, fmt } from "@/lib/Conditions";
-import DailyForecast from "@/components/DailyForecast";
-import { getDailyForecast, getFreezingSeries } from "@/lib/Forecast";
-import { tempAt, windAloft } from "@/lib/Model";
-import { OPEN_GRAPH, SITE_NAME } from "@/lib/Site";
 import { getCurrentConditions, type HillNow } from "@/lib/Weather";
 
 export function generateStaticParams() {
@@ -30,7 +33,7 @@ export function generateStaticParams() {
 
 const title = (z: ZoneConfig) => `${z.fullName} Avalanche Danger & Conditions`;
 const description = (z: ZoneConfig) =>
-  `${z.fullName} today: Avalanche Canada danger ratings, freezing level, and temperature and rain or snow from ${fmt(Math.min(...z.heights))} to ${fmt(Math.max(...z.heights))} m. ${z.description} Updated hourly.`;
+  `${z.fullName} today: Avalanche Canada danger ratings, freezing level, and temperature and rain or snow from ${fmt(z.bottom)} to ${fmt(z.top)} m. ${z.description} Updated hourly.`;
 
 export async function generateMetadata({
   params,
@@ -40,17 +43,7 @@ export async function generateMetadata({
   const { zone } = await params;
   const z = ZONES.find((x) => x.id === zone);
   if (!z) return {};
-  return {
-    title: title(z),
-    description: description(z),
-    alternates: { canonical: `/backcountry/${z.id}` },
-    openGraph: {
-      ...OPEN_GRAPH,
-      title: `${title(z)} | ${SITE_NAME}`,
-      description: description(z),
-      url: `/backcountry/${z.id}`,
-    },
-  };
+  return pageMetadata({ title: title(z), description: description(z), path: `/backcountry/${z.id}` });
 }
 
 // Navigations into this page wait for it rather than showing a loading skeleton
@@ -67,23 +60,25 @@ export default async function ZonePage({ params }: { params: Promise<{ zone: str
   if (!zone) notFound();
 
   return (
-    <>
-      <PageTransition>
-        <ZoneContent zone={zone} />
-      </PageTransition>
-    </>
+    <PageTransition>
+      <ZoneContent zone={zone} />
+    </PageTransition>
   );
 }
 
 function ElevationTable({ zone, now }: { zone: ZoneConfig; now: HillNow }) {
-  const sky = { precipitation: now.precipitation, cloud: now.cloud, code: now.code };
-  const ridge = windAloft(now.aloft, Math.max(...zone.heights));
+  const ridge = windAloft(now.aloft, zone.top);
+  const details: [string, string][] = [
+    ["Freezing level", `${fmt(now.freezingLevel)} m`],
+    ["Precipitation", precipRate(now.precipitation)],
+    ["Ridgetop wind", `${ridge.speed} km/h ${compass(ridge.dir)}`],
+    ["Near-surface wind", `${Math.round(now.wind)} km/h · gusts ${Math.round(now.gust)}`],
+  ];
   return (
     <Card>
-      <h3 className="font-semibold text-ink">Conditions by elevation</h3>
-      <p className="mb-4 mt-1 text-xs text-muted">
-        Model estimates at heights across this terrain, highest first
-      </p>
+      <CardTitle note="Model estimates at heights across this terrain, highest first" className="mb-4">
+        Conditions by elevation
+      </CardTitle>
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="text-xs text-muted">
@@ -95,167 +90,127 @@ function ElevationTable({ zone, now }: { zone: ZoneConfig; now: HillNow }) {
         <tbody>
           {[...zone.heights]
             .sort((a, b) => b - a)
-            .map((h) => {
-              const c = conditionAt(h, now.freezingLevel, sky);
-              return (
-                <tr key={h} className="border-t border-line">
-                  <td className="py-2 tabular-nums text-ink">{fmt(h)} m</td>
-                  <td className="py-2 tabular-nums text-ink">
-                    {Math.round(tempAt(now.profile, h) * 10) / 10}°
-                  </td>
-                  <td className="py-2">
-                    <span className={`chip ${CONDITION[c].chip}`}>{CONDITION[c].label}</span>
-                  </td>
-                </tr>
-              );
-            })}
+            .map((h) => (
+              <tr key={h} className="border-t border-line">
+                <td className="py-2 tabular-nums text-ink">{fmt(h)} m</td>
+                <td className="py-2 tabular-nums text-ink">{round1(tempAt(now.profile, h))}°</td>
+                <td className="py-2">
+                  <ConditionChip condition={conditionAt(h, now.freezingLevel, now)} />
+                </td>
+              </tr>
+            ))}
         </tbody>
       </table>
       <dl className="mt-4 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
-        <div>
-          <dt className="text-muted">Freezing level</dt>
-          <dd className="mt-1 tabular-nums text-ink">{fmt(now.freezingLevel)} m</dd>
-        </div>
-        <div>
-          <dt className="text-muted">Precipitation</dt>
-          <dd className="mt-1 tabular-nums text-ink">
-            {now.precipitation > 0 ? `${now.precipitation} mm/h` : "None"}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted">Ridgetop wind</dt>
-          <dd className="mt-1 tabular-nums text-ink">
-            {ridge.speed} km/h {compass(ridge.dir)}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted">Near-surface wind</dt>
-          <dd className="mt-1 tabular-nums text-ink">
-            {Math.round(now.wind)} km/h · gusts {Math.round(now.gust)}
-          </dd>
-        </div>
+        {details.map(([label, value]) => (
+          <div key={label}>
+            <dt className="text-muted">{label}</dt>
+            <dd className="mt-1 tabular-nums text-ink">{value}</dd>
+          </div>
+        ))}
       </dl>
     </Card>
   );
 }
 
 async function ZoneContent({ zone }: { zone: ZoneConfig }) {
-  const [avyRes, nowRes, freezingRes, stationsRes, dailyRes] = await Promise.allSettled([
+  const [forecast, now, freezing, stations, daily] = await settle([
     getAvalancheForecast(zone.id),
     getCurrentConditions().then((c) => c[zone.id]),
     getFreezingSeries([zone.id]),
     getZoneStations(zone.id),
     getDailyForecast(zone.id),
   ]);
-  for (const r of [avyRes, nowRes, freezingRes, stationsRes, dailyRes]) {
-    if (r.status === "rejected") console.error("Fetch failure:", r.reason);
-  }
-  const forecast = avyRes.status === "fulfilled" ? avyRes.value : null;
-  const now = nowRes.status === "fulfilled" ? nowRes.value : null;
-  const freezing = freezingRes.status === "fulfilled" ? freezingRes.value : null;
-  const stations = stationsRes.status === "fulfilled" ? stationsRes.value : null;
-  const daily = dailyRes.status === "fulfilled" ? dailyRes.value : null;
   const snow = stations ? zoneSnow(stations) : undefined;
 
-  // As on a hill's page: the alert sits outside main, so it can run the full
-  // width of the window right under the nav, and its parent spans the whole
-  // page, so it sticks the whole way down.
   return (
-    <div>
-      <PlaceSnowAlert
-        name={`${zone.fullName} backcountry`}
-        snow={snow}
-        alert={snowAlert(snow, daily?.days)}
-        bar
-      />
-      <main className="min-h-screen px-4 py-8 text-ink md:px-10">
-        <div className="mx-auto max-w-8xl space-y-5">
-          <header className="page-header">
-            <p className="text-xs uppercase tracking-widest text-muted">Backcountry</p>
-            <h1 className="flex items-center gap-3 text-4xl font-extrabold sm:gap-4 sm:text-5xl md:text-6xl">
-              <RangeIcon color={zone.color} className="h-8 w-[43px] sm:h-10 sm:w-[54px]" />
-              <span className="min-w-0">{zone.fullName}</span>
-            </h1>
-            <p className="mt-2 max-w-3xl text-ink-2">{zone.description}</p>
-            <div className="mt-4">
-              <PinButton id={zone.id} name={zone.fullName} color={zone.color} size="large" />
-            </div>
-          </header>
-          {forecast ? (
-            <AvalancheCard name={zone.fullName} forecast={forecast} timeZone={zone.timeZone} />
-          ) : (
-            <Unavailable title={`${zone.fullName} avalanche danger`} />
-          )}
-
-          <SectionLabel>Rain and snow line, by elevation</SectionLabel>
-          {now ? (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <ZoneDiagram zone={zone} now={now} />
-              <div className="lg:col-span-2">
-                <ElevationTable zone={zone} now={now} />
-              </div>
-            </div>
-          ) : (
-            <Unavailable title="Conditions by elevation" />
-          )}
-
-          <SectionLabel>Forecast</SectionLabel>
-          {daily && daily.days.length > 0 ? (
-            <DailyForecast
-              days={daily.days}
-              top={{ label: "Upper", elevation: Math.max(...zone.heights) }}
-              bottom={{ label: "Lower", elevation: Math.min(...zone.heights) }}
-              color={zone.color}
-            />
-          ) : (
-            <Unavailable title="Forecast" />
-          )}
-
-          <SectionLabel>Freezing level</SectionLabel>
-          {freezing ? (
-            <FreezingChart
-              series={freezing}
-              note={`Daily low–high range at ${zone.fullName} · Open-Meteo model`}
-            />
-          ) : (
-            <Unavailable title="Freezing level" />
-          )}
-
-          <SectionLabel>Temperature and wind</SectionLabel>
-          {now ? (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <ZoneTemperatureChart zone={zone} now={now} />
-              <ZoneWindCard zone={zone} now={now} />
-            </div>
-          ) : (
-            <Unavailable title="Temperature and wind" />
-          )}
-
-          {zone.stations.length > 0 && (
-            <>
-              <SectionLabel>Weather stations</SectionLabel>
-              {stations ? (
-                <ZoneStations stations={stations} now={now} timeZone={zone.timeZone} />
-              ) : (
-                <Unavailable title="Weather stations" />
-              )}
-            </>
-          )}
-
-          <footer className="pb-4 pt-2 text-xs text-faint">
-            Avalanche danger ratings from{" "}
-            <a href="https://avalanche.ca" className="underline hover:text-ink">
-              Avalanche Canada
-            </a>
-            . Weather is model estimates, not station observations; the snow line is
-            estimated at 150 m below the freezing level. Weather data by{" "}
-            <a href="https://open-meteo.com" className="underline hover:text-ink">
-              Open-Meteo.com
-            </a>
-            .
-          </footer>
+    <Page
+      transition={false}
+      banner={
+        <PlaceSnowAlert
+          name={`${zone.fullName} backcountry`}
+          snow={snow}
+          alert={snowAlert(snow, daily?.days)}
+          bar
+        />
+      }
+    >
+      <PageHeader
+        eyebrow="Backcountry"
+        icon={<RangeIcon color={zone.color} className={TITLE_ICON} />}
+        title={zone.fullName}
+      >
+        <p className="mt-2 max-w-3xl text-ink-2">{zone.description}</p>
+        <div className="mt-4">
+          <PinButton id={zone.id} name={zone.fullName} color={zone.color} size="large" />
         </div>
-      </main>
-    </div>
+      </PageHeader>
+      {forecast ? (
+        <AvalancheCard name={zone.fullName} forecast={forecast} timeZone={zone.timeZone} />
+      ) : (
+        <Unavailable title={`${zone.fullName} avalanche danger`} />
+      )}
+
+      <SectionLabel>Rain and snow line, by elevation</SectionLabel>
+      {now ? (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <ZoneDiagram zone={zone} now={now} />
+          <div className="lg:col-span-2">
+            <ElevationTable zone={zone} now={now} />
+          </div>
+        </div>
+      ) : (
+        <Unavailable title="Conditions by elevation" />
+      )}
+
+      <SectionLabel>Forecast</SectionLabel>
+      {daily && daily.days.length > 0 ? (
+        <DailyForecast
+          days={daily.days}
+          top={{ label: "Upper", elevation: zone.top }}
+          bottom={{ label: "Lower", elevation: zone.bottom }}
+          color={zone.color}
+        />
+      ) : (
+        <Unavailable title="Forecast" />
+      )}
+
+      <SectionLabel>Freezing level</SectionLabel>
+      {freezing ? (
+        <FreezingChart
+          series={freezing}
+          note={`Daily low–high range at ${zone.fullName} · Open-Meteo model`}
+        />
+      ) : (
+        <Unavailable title="Freezing level" />
+      )}
+
+      <SectionLabel>Temperature and wind</SectionLabel>
+      {now ? (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ZoneTemperatureChart zone={zone} now={now} />
+          <ZoneWindCard zone={zone} now={now} />
+        </div>
+      ) : (
+        <Unavailable title="Temperature and wind" />
+      )}
+
+      {zone.stations.length > 0 && (
+        <>
+          <SectionLabel>Weather stations</SectionLabel>
+          {stations ? (
+            <ZoneStations stations={stations} now={now} timeZone={zone.timeZone} />
+          ) : (
+            <Unavailable title="Weather stations" />
+          )}
+        </>
+      )}
+
+      <PageFooter>
+        Avalanche danger ratings from <AvalancheCanada />. Weather is model estimates, not
+        station observations; the snow line is estimated at 150 m below the freezing level.
+        Weather data by <OpenMeteo />.
+      </PageFooter>
+    </Page>
   );
 }

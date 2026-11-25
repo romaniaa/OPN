@@ -1,18 +1,46 @@
-import Link from "next/link";
-import { NAV_FORWARD } from "@/components/Transitions";
 import type { ReactNode } from "react";
 
+// A panel. `accent` draws a rule in a place's colour along the top; `compact`
+// pads it less, for cards that sit in a grid or beside another card; `plate`
+// (on by default) adds the survey ticks in its corners.
 export function Card({
   children,
   className = "",
+  accent,
+  compact = false,
+  plate = true,
 }: {
   children: ReactNode;
   className?: string;
+  accent?: string;
+  compact?: boolean;
+  plate?: boolean;
 }) {
   return (
-    <section className={`plate border border-line bg-surface p-5 ${className}`}>
+    <section
+      className={`border border-line bg-surface ${plate ? "plate" : ""} ${compact ? "p-4" : "p-5"} ${className}`}
+      style={accent ? { borderTop: `3px solid ${accent}` } : undefined}
+    >
       {children}
     </section>
+  );
+}
+
+// A card's heading, with one short line under it saying what it shows.
+export function CardTitle({
+  children,
+  note,
+  className = "",
+}: {
+  children: ReactNode;
+  note?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <h3 className="font-semibold text-ink">{children}</h3>
+      {note && <p className="mt-1 text-xs text-muted">{note}</p>}
+    </div>
   );
 }
 
@@ -48,10 +76,45 @@ export function Eyebrow({ children }: { children: ReactNode }) {
   );
 }
 
+// A headline reading in the display face, with its unit small beside it.
+const FIGURE = {
+  sm: ["text-2xl", "ml-0.5 text-xs"],
+  md: ["text-3xl", "ml-0.5 text-sm"],
+  lg: ["text-4xl", "ml-1 text-lg"],
+  xl: ["text-5xl", "ml-1 text-base"],
+  "2xl": ["text-6xl", "ml-1 text-2xl"],
+} as const;
+
+export function Figure({
+  value,
+  unit,
+  size = "md",
+  as: Tag = "p",
+  className = "",
+  children,
+}: {
+  value: ReactNode;
+  unit?: string;
+  size?: keyof typeof FIGURE;
+  as?: "p" | "dd" | "span";
+  className?: string;
+  children?: ReactNode; // anything after the unit
+}) {
+  const [text, unitText] = FIGURE[size];
+  return (
+    <Tag className={`font-display font-bold tabular-nums text-ink ${text} ${className}`}>
+      {value}
+      {unit && <span className={`font-normal text-muted ${unitText}`}>{unit}</span>}
+      {children}
+    </Tag>
+  );
+}
+
+// In place of a card whose data didn't load.
 export function Unavailable({ title }: { title: string }) {
   return (
     <Card>
-      <h3 className="font-semibold text-ink">{title}</h3>
+      <CardTitle>{title}</CardTitle>
       <p className="mt-2 text-sm text-muted">
         This one didn&apos;t load just now. It&apos;ll try again on the next refresh.
       </p>
@@ -59,79 +122,25 @@ export function Unavailable({ title }: { title: string }) {
   );
 }
 
-// The arrow on links that open another site.
-export function ExternalArrow({ className = "h-3.5 w-3.5" }: { className?: string }) {
+// In place of the weather on a hill's or zone's card.
+export function NoWeather() {
   return (
-    <svg
-      viewBox="0 0 16 16"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6 3h7v7M13 3 3 13" />
-    </svg>
+    <p className="mt-3 text-sm text-muted">
+      Weather data is unavailable. It will retry on the next refresh.
+    </p>
   );
 }
 
-// The arrow on secondary links within the site; it nudges forward on hover.
-function NextArrow() {
+// An inline link to another site, for credits in running text.
+export function SourceLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <svg
-      viewBox="0 0 16 16"
-      className="pill-arrow h-3.5 w-3.5"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 8h10M9 4l4 4-4 4" />
-    </svg>
-  );
-}
-
-// A compact pill button that is a link. Filled for the main way out of a card
-// (e.g. a resort's own page), raised by default, and secondary (outlined and
-// quiet, with an arrow) for ways onward that shouldn't compete with the page's
-// main actions. External links open in a new tab and say so to screen readers.
-export function PillLink({
-  href,
-  children,
-  filled = false,
-  secondary = false,
-  className = "",
-  transitionTypes = NAV_FORWARD,
-}: {
-  href: string;
-  children: ReactNode;
-  filled?: boolean;
-  secondary?: boolean;
-  className?: string;
-  transitionTypes?: string[];
-}) {
-  const external = /^https?:/.test(href);
-  const cls = `orb-pill orb-pill-sm whitespace-nowrap ${secondary ? "orb-pill-secondary" : ""} ${className}`;
-  return external ? (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={cls}
-      data-on={filled || undefined}
-    >
+    <a href={href} className="underline hover:text-ink">
       {children}
-      <ExternalArrow />
-      <span className="sr-only">(opens in a new tab)</span>
     </a>
-  ) : (
-    <Link href={href} className={cls} data-on={filled || undefined} transitionTypes={transitionTypes}>
-      {children}
-      {secondary && <NextArrow />}
-    </Link>
   );
 }
+
+export const AvalancheCanada = () => (
+  <SourceLink href="https://avalanche.ca">Avalanche Canada</SourceLink>
+);
+export const OpenMeteo = () => <SourceLink href="https://open-meteo.com">Open-Meteo.com</SourceLink>;

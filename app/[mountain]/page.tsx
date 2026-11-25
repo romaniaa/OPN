@@ -1,33 +1,34 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import DailyForecast from "@/components/DailyForecast";
 import ElevationVisualizer from "@/components/ElevationVisualizer";
 import FreezingChart from "@/components/FreezingChart";
 import LiftTable from "@/components/LiftTable";
 import LiftTemperatureChart from "@/components/LiftTemperatureChart";
 import MountainIcon from "@/components/MountainIcon";
+import { JsonLd, Page, PageFooter, PageHeader, TITLE_ICON } from "@/components/Page";
 import PinButton from "@/components/PinButton";
 import SnowDepthCard from "@/components/SnowDepthCard";
 import { PlaceSnowAlert } from "@/components/SnowAlert";
 import Summary from "@/components/Summary";
+import { PageTransition, SharedTransition } from "@/components/Transitions";
+import { OpenMeteo, SectionLabel, Unavailable } from "@/components/Ui";
 import WebcamGallery from "@/components/WebcamGallery";
 import WindCard from "@/components/WindCard";
-import { PageTransition, SharedTransition } from "@/components/Transitions";
-import { Eyebrow, SectionLabel, Unavailable } from "@/components/Ui";
 import { LIFTS } from "@/config/lifts";
 import { MOUNTAINS, type MountainConfig } from "@/config/mountains";
 import { regionById } from "@/config/regions";
 import { WEBCAMS } from "@/config/webcams";
-import { extremes, fmt, verdict, vertical } from "@/lib/Conditions";
-import DailyForecast from "@/components/DailyForecast";
+import { extremes, verdict, vertical } from "@/lib/Conditions";
 import { getDailyForecast, getFreezingSeries, getMountainReadings } from "@/lib/Forecast";
+import { fmt } from "@/lib/Format";
+import { settle } from "@/lib/Settle";
 import {
-  HOME_TITLE,
-  OPEN_GRAPH,
-  SITE_NAME,
   SITE_URL,
-  jsonLd,
+  breadcrumbs,
   mountainDescription,
   mountainTitle,
+  pageMetadata,
 } from "@/lib/Site";
 import { REPORT_PAGES } from "@/lib/SnowReaders";
 import { snowAlert } from "@/lib/SnowAlert";
@@ -49,19 +50,11 @@ export async function generateMetadata({
   const m = MOUNTAINS.find((x) => x.id === mountain);
   if (!m) return {};
 
-  const title = mountainTitle(m);
-  const description = mountainDescription(m);
-  return {
-    title,
-    description,
-    alternates: { canonical: `/${m.id}` },
-    openGraph: {
-      ...OPEN_GRAPH,
-      title: `${title} | ${SITE_NAME}`,
-      description,
-      url: `/${m.id}`,
-    },
-  };
+  return pageMetadata({
+    title: mountainTitle(m),
+    description: mountainDescription(m),
+    path: `/${m.id}`,
+  });
 }
 
 // Tells search engines what the page is about: a conditions page for a
@@ -100,20 +93,13 @@ function structuredData(m: MountainConfig) {
           addressCountry: m.country,
         },
       },
-      {
-        "@type": "BreadcrumbList",
-        "@id": `${url}#breadcrumb`,
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: HOME_TITLE, item: `${SITE_URL}/` },
-          {
-            "@type": "ListItem",
-            position: 2,
-            name: `${regionById(m.region).name} ski conditions`,
-            item: `${SITE_URL}/${m.region}`,
-          },
-          { "@type": "ListItem", position: 3, name: m.fullName, item: url },
+      breadcrumbs(
+        [
+          { name: `${regionById(m.region).name} ski conditions`, path: `/${m.region}` },
+          { name: m.fullName, path: `/${m.id}` },
         ],
-      },
+        `${url}#breadcrumb`
+      ),
     ],
   };
 }
@@ -139,10 +125,7 @@ export default async function MountainPage({
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLd(structuredData(config)) }}
-      />
+      <JsonLd data={structuredData(config)} />
       <PageTransition>
         <MountainContent config={config} />
       </PageTransition>
@@ -203,31 +186,21 @@ async function MountainContent({ config }: { config: MountainConfig }) {
   const lifts = LIFTS[config.id];
   const webcams = WEBCAMS[config.id];
 
-  const [weatherRes, stationsRes, freezingRes, snowRes, dailyRes, snowStationRes] =
-    await Promise.allSettled([
-      getMountainWeather(config),
-      getMountainReadings(config.id),
-      getFreezingSeries([config.id]),
-      getSnowReport(config.id),
-      getDailyForecast(config.id),
-      getHillSnowStation(config.id),
-    ]);
-  for (const r of [weatherRes, stationsRes, freezingRes, snowRes, dailyRes, snowStationRes]) {
-    if (r.status === "rejected") console.error("Fetch failure:", r.reason);
-  }
-
-  const weather = weatherRes.status === "fulfilled" ? weatherRes.value : null;
-  const stations = stationsRes.status === "fulfilled" ? stationsRes.value : null;
-  const freezing = freezingRes.status === "fulfilled" ? freezingRes.value : null;
-  // null when fulfilled means it's outside the snow season, so the section is hidden.
-  const snowFailed = snowRes.status === "rejected";
-  const snow = snowRes.status === "fulfilled" ? snowRes.value : null;
-  const daily = dailyRes.status === "fulfilled" ? dailyRes.value : null;
+  const [weather, stations, freezing, snowRes, daily, snowStationRes] = await settle([
+    getMountainWeather(config),
+    getMountainReadings(config.id),
+    getFreezingSeries([config.id]),
+    // Wrapped, so a failed read (null) can be told from no report this season
+    // ({ report: null }), when the section is hidden.
+    getSnowReport(config.id).then((report) => ({ report })),
+    getDailyForecast(config.id),
+    getHillSnowStation(config.id),
+  ]);
+  const snow = snowRes?.report ?? null;
   // The snow sensor beside the hill, used in the snow season when the resort has
   // no figures (and shown as a check when it does).
-  const inSeason = snow != null || snowFailed;
-  const snowStation =
-    inSeason && snowStationRes.status === "fulfilled" ? snowStationRes.value : null;
+  const inSeason = snow != null || snowRes == null;
+  const snowStation = inSeason ? snowStationRes : null;
 
   const freezingLevel = weather?.freezingLevel ?? freezing?.current ?? null;
   const { low, high } = extremes(config);
@@ -237,161 +210,141 @@ async function MountainContent({ config }: { config: MountainConfig }) {
   const hillSnowNow = hillSnow(snow, snowStation);
   const alert = snowAlert(hillSnowNow, daily?.days);
 
-  // The alert sits outside main, so it can run the full width of the window
-  // right under the nav. Its parent spans the whole page, so it sticks the whole
-  // way down.
   return (
-    <div>
-      <PlaceSnowAlert name={config.fullName} snow={hillSnowNow} alert={alert} bar />
-      <main className="min-h-screen px-4 py-8 text-ink md:px-10">
-        <div className="mx-auto max-w-8xl space-y-6">
-          <header className="page-header">
-            <Eyebrow>
-              {config.locality} · {regionById(config.region).name}
-            </Eyebrow>
-            <h1 className="mt-3 flex items-center gap-3 text-4xl font-extrabold sm:gap-4 sm:text-5xl md:text-6xl">
-              <MountainIcon
-                id={config.id}
-                color={config.color}
-                className="h-8 w-[43px] sm:h-10 sm:w-[54px]"
-              />
-              <span className="min-w-0">{config.fullName}</span>
-            </h1>
-            <p className="mt-3 text-sm tabular-nums text-muted">
-              {fmt(low)}–{fmt(high)} m lifts · {fmt(vertical(config))} m vertical ·{" "}
-              {config.lat.toFixed(3)}°N {Math.abs(config.lon).toFixed(3)}°W
-            </p>
-            <Intro
-              config={config}
-              sky={weather}
-              freezingLevel={freezingLevel}
-              snow={snow}
-              stationSnow={snowFromStation(snowStation)}
-            />
-            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-              <PinButton id={config.id} name={config.fullName} color={config.color} size="large" />
-              {freezing && (
-                <p className="text-xs text-faint">Model data · updated {freezing.updated}</p>
-              )}
-            </div>
-          </header>
-
-          {/* Summary and snow depth share a row on desktop. Outside the snow
-              season there is no depth card, so the summary takes the full width. */}
-          <div
-            className={`grid grid-cols-1 gap-5 ${
-              inSeason ? "lg:grid-cols-5" : ""
-            }`}
-          >
-            <div className="lg:col-span-3">
-              {freezing && weather && topStation ? (
-                <Summary
-                  compact
-                  title={`${config.name} summary`}
-                  freezing={freezing}
-                  precip={[
-                    { name: config.name, precipitation: weather.precipitation },
-                  ]}
-                  gusts={[{ name: config.name, gust: topStation.gust }]}
-                  cloud={topStation.cloud}
-                />
-              ) : (
-                <Unavailable title={`${config.name} summary`} />
-              )}
-            </div>
-            {inSeason && (
-              <div className="lg:col-span-2">
-                <SnowDepthCard
-                  name={config.name}
-                  report={snow}
-                  station={snowStation}
-                  url={REPORT_PAGES[config.id]}
-                  timeZone={config.timeZone}
-                />
-              </div>
-            )}
-          </div>
-
-          {webcams && (
-            <>
-              <SectionLabel note="See it for yourself, live from the hill.">Webcams</SectionLabel>
-              <WebcamGallery name={config.name} webcams={webcams} />
-            </>
+    <Page
+      transition={false}
+      className="space-y-6"
+      banner={<PlaceSnowAlert name={config.fullName} snow={hillSnowNow} alert={alert} bar />}
+    >
+      <PageHeader
+        eyebrow={`${config.locality} · ${regionById(config.region).name}`}
+        icon={<MountainIcon id={config.id} color={config.color} className={TITLE_ICON} />}
+        title={config.fullName}
+      >
+        <p className="mt-3 text-sm tabular-nums text-muted">
+          {fmt(low)}–{fmt(high)} m lifts · {fmt(vertical(config))} m vertical ·{" "}
+          {config.lat.toFixed(3)}°N {Math.abs(config.lon).toFixed(3)}°W
+        </p>
+        <Intro
+          config={config}
+          sky={weather}
+          freezingLevel={freezingLevel}
+          snow={snow}
+          stationSnow={snowFromStation(snowStation)}
+        />
+        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <PinButton id={config.id} name={config.fullName} color={config.color} size="large" />
+          {freezing && (
+            <p className="text-xs text-faint">Model data · updated {freezing.updated}</p>
           )}
+        </div>
+      </PageHeader>
 
-          <SectionLabel note="What's falling at each lift, from the base to the top.">
-            Rain and snow line, and lifts
-          </SectionLabel>
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-            <SharedTransition name={`resort-${config.id}`}>
-              <ElevationVisualizer config={config} weather={weather} snow={hillSnowNow} alert={alert} />
-            </SharedTransition>
-            <div className="lg:col-span-2">
-              {stations && freezingLevel != null ? (
-                <LiftTable
-                  lifts={lifts}
-                  stations={stations}
-                  freezingLevel={freezingLevel}
-                  color={config.color}
-                />
-              ) : (
-                <Unavailable title="Lifts" />
-              )}
-            </div>
+      {/* Summary and snow depth share a row on desktop. Outside the snow
+          season there is no depth card, so the summary takes the full width. */}
+      <div className={`grid grid-cols-1 gap-5 ${inSeason ? "lg:grid-cols-5" : ""}`}>
+        <div className="lg:col-span-3">
+          {freezing && weather && topStation ? (
+            <Summary
+              compact
+              title={`${config.name} summary`}
+              freezing={freezing}
+              precip={[{ name: config.name, precipitation: weather.precipitation }]}
+              gusts={[{ name: config.name, gust: topStation.gust }]}
+              cloud={topStation.cloud}
+            />
+          ) : (
+            <Unavailable title={`${config.name} summary`} />
+          )}
+        </div>
+        {inSeason && (
+          <div className="lg:col-span-2">
+            <SnowDepthCard
+              name={config.name}
+              report={snow}
+              station={snowStation}
+              url={REPORT_PAGES[config.id]}
+              timeZone={config.timeZone}
+            />
           </div>
+        )}
+      </div>
 
-          <SectionLabel note="The week ahead, at the top and at the base.">Forecast</SectionLabel>
-          {daily && daily.days.length > 0 ? (
-            <DailyForecast
-              days={daily.days}
-              top={{ label: "Top", elevation: config.lifts.top.elevation }}
-              bottom={{ label: "Base", elevation: config.lifts.bottom.elevation }}
+      {webcams && (
+        <>
+          <SectionLabel note="See it for yourself, live from the hill.">Webcams</SectionLabel>
+          <WebcamGallery name={config.name} webcams={webcams} />
+        </>
+      )}
+
+      <SectionLabel note="What's falling at each lift, from the base to the top.">
+        Rain and snow line, and lifts
+      </SectionLabel>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <SharedTransition name={`resort-${config.id}`}>
+          <ElevationVisualizer config={config} weather={weather} snow={hillSnowNow} alert={alert} />
+        </SharedTransition>
+        <div className="lg:col-span-2">
+          {stations && freezingLevel != null ? (
+            <LiftTable
+              lifts={lifts}
+              stations={stations}
+              freezingLevel={freezingLevel}
               color={config.color}
             />
           ) : (
-            <Unavailable title="Forecast" />
+            <Unavailable title="Lifts" />
           )}
-
-          <SectionLabel note="Where 0° sits on the mountain, and where it's heading.">Freezing level</SectionLabel>
-          {freezing ? (
-            <SharedTransition name="freezing">
-              <FreezingChart
-                series={freezing}
-                note={`Daily low–high range at ${config.fullName} · Open-Meteo model`}
-              />
-            </SharedTransition>
-          ) : (
-            <Unavailable title="Freezing level" />
-          )}
-
-          <SectionLabel note="How cold it is at each lift, and how hard it's blowing up top.">
-            Temperature and wind
-          </SectionLabel>
-          {stations && topStation ? (
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-              <LiftTemperatureChart
-                lifts={lifts}
-                stations={stations}
-                color={config.color}
-                mountain={config.id}
-              />
-              <WindCard station={topStation} color={config.color} />
-            </div>
-          ) : (
-            <Unavailable title="Temperature and wind" />
-          )}
-
-          <footer className="pb-4 pt-10 text-xs text-faint">
-            Heads up: these are computer-model estimates, not readings from the hill.
-            The snow line is our guess at 150 m below the freezing level. Weather data
-            by{" "}
-            <a href="https://open-meteo.com" className="underline hover:text-ink">
-              Open-Meteo.com
-            </a>
-            .
-          </footer>
         </div>
-      </main>
-    </div>
+      </div>
+
+      <SectionLabel note="The week ahead, at the top and at the base.">Forecast</SectionLabel>
+      {daily && daily.days.length > 0 ? (
+        <DailyForecast
+          days={daily.days}
+          top={{ label: "Top", elevation: high }}
+          bottom={{ label: "Base", elevation: low }}
+          color={config.color}
+        />
+      ) : (
+        <Unavailable title="Forecast" />
+      )}
+
+      <SectionLabel note="Where 0° sits on the mountain, and where it's heading.">
+        Freezing level
+      </SectionLabel>
+      {freezing ? (
+        <SharedTransition name="freezing">
+          <FreezingChart
+            series={freezing}
+            note={`Daily low–high range at ${config.fullName} · Open-Meteo model`}
+          />
+        </SharedTransition>
+      ) : (
+        <Unavailable title="Freezing level" />
+      )}
+
+      <SectionLabel note="How cold it is at each lift, and how hard it's blowing up top.">
+        Temperature and wind
+      </SectionLabel>
+      {stations && topStation ? (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <LiftTemperatureChart
+            lifts={lifts}
+            stations={stations}
+            color={config.color}
+            mountain={config.id}
+          />
+          <WindCard station={topStation} color={config.color} />
+        </div>
+      ) : (
+        <Unavailable title="Temperature and wind" />
+      )}
+
+      <PageFooter className="pt-10">
+        Heads up: these are computer-model estimates, not readings from the hill. The snow
+        line is our guess at 150 m below the freezing level. Weather data by <OpenMeteo />.
+      </PageFooter>
+    </Page>
   );
 }

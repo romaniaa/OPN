@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { NAV_FADE } from "@/components/Transitions";
-import { ExternalArrow, PillLink } from "@/components/Ui";
+import { ExternalArrow } from "@/components/Icons";
+import PillLink from "@/components/PillLink";
 import { SITE_NAME } from "@/lib/Site";
 
 export const CREATOR_NAME = "Roman Hermens";

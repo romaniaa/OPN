@@ -1,10 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import MountainIcon from "@/components/MountainIcon";
-import RangeIcon from "@/components/RangeIcon";
+import PlaceIcon from "@/components/PlaceIcon";
 import { NAV_FORWARD } from "@/components/Transitions";
-import type { MountainConfig } from "@/config/mountains";
-import type { ZoneConfig } from "@/config/zones";
+import { weekday } from "@/lib/Format";
+import type { Place, PlaceId } from "@/lib/Place";
 import { SNOW_ALERT_CM, SNOW_ALERT_DAYS, type SnowAlert } from "@/lib/SnowAlert";
 import type { SnowNow } from "@/lib/SnowNow";
 
@@ -15,10 +14,7 @@ import type { SnowNow } from "@/lib/SnowNow";
 function when({ date, offset }: { date: string; offset: number }, long = false) {
   if (offset === 0) return "today";
   if (offset === 1) return "tomorrow";
-  const day = new Date(`${date}T12:00:00Z`).toLocaleDateString("en-CA", {
-    timeZone: "UTC",
-    weekday: long ? "long" : "short",
-  });
+  const day = weekday(date, long ? "long" : "short");
   return long ? `on ${day}` : day;
 }
 
@@ -68,6 +64,12 @@ export function SnowAlertChip({ alert }: { alert: SnowAlert | null | undefined }
   );
 }
 
+const AlertHeading = () => (
+  <h2 className="font-display text-sm font-semibold uppercase tracking-[0.12em] text-warm">
+    Snowfall alert
+  </h2>
+);
+
 // The banner's frame: a red rule down the left, like the chips.
 function Banner({ children }: { children: ReactNode }) {
   return (
@@ -77,9 +79,7 @@ function Banner({ children }: { children: ReactNode }) {
     >
       <Snowflake className="mt-0.5 h-5 w-5 shrink-0 text-warm" />
       <div className="min-w-0">
-        <h2 className="font-display text-sm font-semibold uppercase tracking-[0.12em] text-warm">
-          Snowfall alert
-        </h2>
+        <AlertHeading />
         <div className="mt-1 space-y-1 text-ink-2">{children}</div>
       </div>
     </section>
@@ -98,9 +98,7 @@ function Bar({ children }: { children: ReactNode }) {
       <div className="mx-auto flex max-w-8xl items-start gap-3 py-3">
         <Snowflake className="mt-0.5 h-4 w-4 shrink-0 text-warm" />
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm">
-          <h2 className="font-display text-sm font-semibold uppercase tracking-[0.12em] text-warm">
-            Snowfall alert
-          </h2>
+          <AlertHeading />
           <div className="space-y-0.5 text-ink-2">{children}</div>
         </div>
       </div>
@@ -161,58 +159,46 @@ function byUrgency(a: SnowAlert, b: SnowAlert) {
 // The banner on a list page, naming every hill and zone with an alert. Nothing
 // when none has one.
 export function SnowAlertBanner({
-  hills = [],
-  zones = [],
+  places,
+  alerts,
 }: {
-  hills?: { config: MountainConfig; alert: SnowAlert | null | undefined }[];
-  zones?: { config: ZoneConfig; alert: SnowAlert | null | undefined }[];
+  places: Place[];
+  alerts: Partial<Record<PlaceId, SnowAlert>>;
 }) {
-  const alerting = <T,>(places: { config: T; alert: SnowAlert | null | undefined }[]) =>
-    places.flatMap(({ config, alert }) => (alert ? [{ config, alert }] : []));
-  const hillAlerts = alerting(hills);
-  const zoneAlerts = alerting(zones);
-  const total = hillAlerts.length + zoneAlerts.length;
-  if (total === 0) return null;
+  const items = places
+    .flatMap((place) => {
+      const alert = alerts[place.id];
+      return alert ? [{ place, alert }] : [];
+    })
+    .sort((a, b) => byUrgency(a.alert, b.alert));
+  if (items.length === 0) return null;
 
+  const hills = items.filter((i) => i.place.kind === "hill").length;
+  const zones = items.length - hills;
   const subject = [
-    hillAlerts.length > 0 && count(hillAlerts.length, "hill", "hills"),
-    zoneAlerts.length > 0 && count(zoneAlerts.length, "backcountry zone", "backcountry zones"),
+    hills > 0 && count(hills, "hill", "hills"),
+    zones > 0 && count(zones, "backcountry zone", "backcountry zones"),
   ]
     .filter(Boolean)
     .join(" and ");
-  const items = [
-    ...hillAlerts.map(({ config, alert }) => ({
-      id: config.id,
-      href: `/${config.id}`,
-      name: config.fullName,
-      icon: <MountainIcon id={config.id} color={config.color} className="h-3 w-4" />,
-      alert,
-    })),
-    ...zoneAlerts.map(({ config, alert }) => ({
-      id: config.id,
-      href: `/backcountry/${config.id}`,
-      name: `${config.fullName} backcountry`,
-      icon: <RangeIcon color={config.color} className="h-3 w-4" />,
-      alert,
-    })),
-  ].sort((a, b) => byUrgency(a.alert, b.alert));
 
   return (
     <Banner>
       <p>
-        {subject} {total === 1 ? "has" : "have"} more than {SNOW_ALERT_CM} cm of snow in a
-        day, fallen in the last 24 hours or forecast in the next {SNOW_ALERT_DAYS} days.
+        {subject} {items.length === 1 ? "has" : "have"} more than {SNOW_ALERT_CM} cm of snow
+        in a day, fallen in the last 24 hours or forecast in the next {SNOW_ALERT_DAYS} days.
       </p>
       <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5">
-        {items.map(({ id, href, name, icon, alert }) => (
-          <li key={id}>
+        {items.map(({ place, alert }) => (
+          <li key={place.id}>
             <Link
-              href={href}
+              href={place.href}
               transitionTypes={NAV_FORWARD}
               className="flex items-center gap-1.5 text-ink hover:underline"
             >
-              {icon}
-              {name}
+              <PlaceIcon place={place} className="h-3 w-4" />
+              {place.fullName}
+              {place.kind === "zone" && " backcountry"}
               <span aria-hidden="true" className="font-semibold tabular-nums text-warm">
                 {alert.fallen != null ? "+" : ""}
                 {short(alert)}

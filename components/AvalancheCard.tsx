@@ -1,15 +1,16 @@
 import type { ReactNode } from "react";
-import { Card } from "@/components/Ui";
+import { ExternalArrow } from "@/components/Icons";
+import { Card, CardTitle } from "@/components/Ui";
 import { isRated, type AvalancheForecast, type Danger } from "@/lib/Avalanche";
 import { DANGER_STYLE } from "@/lib/DangerStyle";
 
 const UNRATED = "bg-line-2 text-ink-2";
 
-export function dangerClass(d: Danger) {
+function dangerClass(d: Danger) {
   return isRated(d) ? DANGER_STYLE[d.value].cell : UNRATED;
 }
 
-export function dangerLabel(d: Danger) {
+function dangerLabel(d: Danger) {
   return isRated(d) ? DANGER_STYLE[d.value].label : d.display;
 }
 
@@ -52,18 +53,7 @@ function ForecastLink({
     >
       <span className="sm:hidden">{short}</span>
       <span className="hidden sm:inline">{children}</span>
-      <svg
-        viewBox="0 0 16 16"
-        className="h-4 w-4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M6 3h7v7M13 3 3 13" />
-      </svg>
+      <ExternalArrow className="h-4 w-4" />
       <span className="sr-only">(opens avalanche.ca in a new tab)</span>
     </a>
   );
@@ -91,7 +81,7 @@ export default function AvalancheCard({
     return (
       <Card className="space-y-3">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="font-semibold text-ink">{name} avalanche danger</h3>
+          <CardTitle>{name} avalanche danger</CardTitle>
           <span className="chip bg-ink/10 text-ink-2">Avalanche Canada</span>
         </div>
         <p className="text-sm text-ink-2">
@@ -112,13 +102,11 @@ export default function AvalancheCard({
   return (
     <Card className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold text-ink">{name} avalanche danger</h3>
-          <p className="mt-1 text-xs text-muted">
-            Issued {when(forecast.issued, timeZone)} · valid until{" "}
-            {when(forecast.validUntil, timeZone)}
-          </p>
-        </div>
+        <CardTitle
+          note={`Issued ${when(forecast.issued, timeZone)} · valid until ${when(forecast.validUntil, timeZone)}`}
+        >
+          {name} avalanche danger
+        </CardTitle>
         <span className="chip bg-ink/10 text-ink-2">{forecast.owner}</span>
       </div>
 

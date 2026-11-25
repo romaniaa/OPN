@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import Logo from "@/components/Logo";
+import { LogoArt } from "@/components/LogoArt";
 import type { MountainConfig } from "@/config/mountains";
 import { SITE_NAME } from "@/lib/Site";
 
@@ -46,7 +46,7 @@ export function ogImage({
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", padding: "64px 72px 0" }}>
-          <Logo color="white" height={56} />
+          <LogoArt color="white" height={56} />
           <div style={{ fontSize: 76, fontWeight: 700, marginTop: 16, lineHeight: 1.05 }}>
             {title}
           </div>

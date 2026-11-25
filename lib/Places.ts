@@ -1,12 +1,8 @@
 import { cacheLife } from "next/cache";
 import { MOUNTAINS } from "@/config/mountains";
 import { ZONES, type ZoneId } from "@/config/zones";
-import {
-  getAvalancheForecast,
-  highestDanger,
-  type AvalancheForecast,
-  type DangerLevel,
-} from "@/lib/Avalanche";
+import { getAvalancheForecast, type AvalancheForecast, type DangerLevel } from "@/lib/Avalanche";
+import { todayDanger } from "@/lib/Danger";
 import { verdict } from "@/lib/Conditions";
 import { DANGER_STYLE } from "@/lib/DangerStyle";
 import { getSnowOutlook } from "@/lib/Forecast";
@@ -21,6 +17,9 @@ export interface PlacesNow {
   snow: Partial<Record<PlaceId, SnowNow>>; // places with a snow depth; empty if none loaded
   alerts: Partial<Record<PlaceId, SnowAlert>>; // places with a snowfall alert
 }
+
+// What the list pages show when none of it could be loaded.
+export const EMPTY_PLACES_NOW: PlacesNow = { now: null, avalanche: {}, snow: {}, alerts: {} };
 
 // Current weather for every hill and zone, every zone's avalanche forecast, snow
 // depths and snowfall alerts, for the pages that list them all (/hills, the region pages, /backcountry and My hills). All come
@@ -82,8 +81,7 @@ export async function getNavStatus(): Promise<NavStatus> {
   }
   for (const z of ZONES) {
     const f = avalanche[z.id];
-    const today = f?.status === "ok" ? f.days[0] : undefined;
-    const danger = today && f?.status === "ok" && f.note == null ? highestDanger(today) : null;
+    const danger = todayDanger(f);
     places[z.id] = {
       freezingLevel: now?.[z.id]?.freezingLevel ?? null,
       status: !f

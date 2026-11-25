@@ -1,5 +1,6 @@
 import { Card } from "@/components/Ui";
-import { SNOW_LINE_OFFSET, fmt } from "@/lib/Conditions";
+import { SNOW_LINE_OFFSET } from "@/lib/Conditions";
+import { fmt } from "@/lib/Format";
 import type { FreezingSeries } from "@/lib/Forecast";
 
 interface Props {
@@ -80,7 +81,7 @@ export default function Summary({
   }
 
   return (
-    <Card className={compact ? "h-full p-4!" : ""}>
+    <Card compact={compact} className={compact ? "h-full" : ""}>
       <h2 className="text-sm font-medium text-muted">{title}</h2>
       <div
         className={`grid md:auto-cols-fr md:grid-flow-col md:gap-0 md:divide-x md:divide-line-2 ${

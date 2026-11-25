@@ -1,17 +1,16 @@
 import CardMore from "@/components/CardMore";
-import { SnowStat, StatStrip, TempStat } from "@/components/CardStats";
+import { ConditionStrip, Readouts } from "@/components/CardStats";
 import { ElevationDiagram } from "@/components/ElevationVisualizer";
-import RangeIcon from "@/components/RangeIcon";
-import { SnowAlertChip } from "@/components/SnowAlert";
+import { DangerChip, PlaceCardHeader } from "@/components/PlaceCard";
+import { Card, NoWeather } from "@/components/Ui";
 import type { ZoneConfig } from "@/config/zones";
-import { highestDanger, type AvalancheForecast } from "@/lib/Danger";
-import { SNOW_LINE_OFFSET, conditionAt, fmt } from "@/lib/Conditions";
+import type { AvalancheForecast } from "@/lib/Danger";
+import { SNOW_LINE_OFFSET } from "@/lib/Conditions";
+import { compass, fmt, precipRate } from "@/lib/Format";
+import type { HillNow } from "@/lib/PlaceWeather";
 import { tempAt, windAloft } from "@/lib/Profile";
-import { compass } from "@/components/WindCard";
-import { DANGER_STYLE } from "@/lib/DangerStyle";
 import type { SnowAlert } from "@/lib/SnowAlert";
 import type { SnowNow } from "@/lib/SnowNow";
-import type { HillNow } from "@/lib/PlaceWeather";
 
 // A generic range outline: zones span many peaks, so no single ridge is drawn as
 // a likeness. Its heights are scaled to the zone's terrain, so the snow line and
@@ -40,64 +39,37 @@ export default function ZoneDiagram({
   alert?: SnowAlert | null; // snowfall alert, fallen or forecast
   more?: boolean; // the card links to the zone's page: show the "Full report" footer
 }) {
+  const { top, bottom } = zone;
   const heights = [...zone.heights].sort((a, b) => b - a);
-  const top = heights[0];
-  const bottom = heights[heights.length - 1];
   const lo = bottom - 250;
   const hi = top + 120;
   const details = forecast !== undefined;
-  const sky = now && { precipitation: now.precipitation, cloud: now.cloud, code: now.code };
-  const ridge = now ? windAloft(now.aloft, top) : null;
-
-  const today = forecast?.status === "ok" ? forecast.days[0] : undefined;
-  const level = today && forecast?.status === "ok" && forecast.note == null ? highestDanger(today) : null;
+  const ridge = now && windAloft(now.aloft, top);
 
   return (
-    <section
-      className={`h-full border border-line bg-surface p-5 ${more ? "flex flex-col" : ""}`}
-      style={{ borderTop: `3px solid ${zone.color}` }}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="flex items-center gap-2 text-2xl font-extrabold text-ink">
-              <RangeIcon color={zone.color} className="h-4 w-6" />
-              {zone.name}
-            </h2>
-            <SnowAlertChip alert={alert} />
-          </div>
-          <p className="font-sans text-xs tabular-nums text-muted">
-            {details ? "Backcountry · " : ""}
-            {fmt(bottom)}–{fmt(top)} m terrain
-          </p>
-        </div>
-        {now && (
-          <div className="text-right">
-            <p className="font-display text-3xl font-bold tabular-nums text-ink">
-              {fmt(now.freezingLevel)}
-              <span className="ml-0.5 text-sm font-normal text-muted">m</span>
-            </p>
-            <p className="text-xs text-muted">Freezing level</p>
-          </div>
-        )}
-      </div>
+    <Card accent={zone.color} plate={false} className={`h-full ${more ? "flex flex-col" : ""}`}>
+      <PlaceCardHeader
+        place={{ kind: "zone", id: zone.id, color: zone.color }}
+        name={zone.name}
+        alert={alert}
+        freezingLevel={now?.freezingLevel}
+      >
+        <p className="font-sans text-xs tabular-nums text-muted">
+          {details ? "Backcountry · " : ""}
+          {fmt(bottom)}–{fmt(top)} m terrain
+        </p>
+      </PlaceCardHeader>
 
-      {details && now && sky && (
-        <StatStrip>
-          {[
-            { label: "Upper", elevation: top },
-            { label: "Lower", elevation: bottom },
-          ].map(({ label, elevation }) => (
-            <TempStat
-              key={label}
-              label={label}
-              elevation={elevation}
-              temp={tempAt(now.profile, elevation)}
-              condition={conditionAt(elevation, now.freezingLevel, sky)}
-            />
-          ))}
-          {snow && <SnowStat snow={snow} />}
-        </StatStrip>
+      {details && now && (
+        <ConditionStrip
+          heights={[
+            { label: "Upper", elevation: top, temp: tempAt(now.profile, top) },
+            { label: "Lower", elevation: bottom, temp: tempAt(now.profile, bottom) },
+          ]}
+          freezingLevel={now.freezingLevel}
+          sky={now}
+          snow={snow}
+        />
       )}
 
       {now ? (
@@ -110,12 +82,10 @@ export default function ZoneDiagram({
           landmarks={heights.map((h, i) => ({ name: BANDS[i] ?? "", elevation: h }))}
           color={zone.color}
           freezingLevel={now.freezingLevel}
-          sky={{ precipitation: now.precipitation, cloud: now.cloud, code: now.code }}
+          sky={now}
         />
       ) : (
-        <p className="mt-3 text-sm text-muted">
-          Weather data is unavailable. It will retry on the next refresh.
-        </p>
+        <NoWeather />
       )}
       <p className="mt-1 text-xs text-faint">
         Heights are to scale; the ridge is a generic outline.
@@ -123,27 +93,14 @@ export default function ZoneDiagram({
 
       {details && (
         <>
-          {now && (
-            <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
-              <div>
-                <dt className="text-xs text-muted">Precip</dt>
-                <dd className="tabular-nums text-ink">
-                  {now.precipitation > 0 ? `${now.precipitation} mm/h` : "None"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Ridgetop wind</dt>
-                <dd className="tabular-nums text-ink">
-                  {ridge?.speed} km/h {ridge && compass(ridge.dir)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Snow line (est.)</dt>
-                <dd className="tabular-nums text-ink">
-                  ~{now.freezingLevel - SNOW_LINE_OFFSET} m
-                </dd>
-              </div>
-            </dl>
+          {now && ridge && (
+            <Readouts
+              items={[
+                ["Precip", precipRate(now.precipitation)],
+                ["Ridgetop wind", `${ridge.speed} km/h ${compass(ridge.dir)}`],
+                ["Snow line (est.)", `~${fmt(now.freezingLevel - SNOW_LINE_OFFSET)} m`],
+              ]}
+            />
           )}
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-line-2 pt-4 text-sm">
             <div>
@@ -152,21 +109,11 @@ export default function ZoneDiagram({
                 {forecast?.status === "ok" ? forecast.owner : "Avalanche Canada"}
               </p>
             </div>
-            {forecast == null ? (
-              <span className="chip bg-ink/10 text-ink-2">Unavailable</span>
-            ) : level ? (
-              <span className={`chip ${DANGER_STYLE[level].chip}`}>
-                Up to {DANGER_STYLE[level].label}
-              </span>
-            ) : (
-              <span className="chip bg-ink/10 text-ink-2">
-                {forecast.status === "ok" ? (forecast.note ?? "No rating") : "No forecast"}
-              </span>
-            )}
+            <DangerChip forecast={forecast} />
           </div>
         </>
       )}
       {more && <CardMore />}
-    </section>
+    </Card>
   );
 }

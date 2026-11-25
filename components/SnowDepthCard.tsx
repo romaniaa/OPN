@@ -1,8 +1,8 @@
-import { Card, PillLink } from "@/components/Ui";
+import PillLink from "@/components/PillLink";
+import { Card, Figure } from "@/components/Ui";
+import { fmt } from "@/lib/Format";
 import type { SnowReport } from "@/lib/SnowReport";
 import type { HillStation } from "@/lib/Stations";
-
-const cm = (n: number) => n.toLocaleString("en-CA");
 
 function SourceLink({ name, url }: { name: string; url: string }) {
   return (
@@ -42,10 +42,10 @@ export default function SnowDepthCard({
         Date.parse(reading.time)
       )
     : null;
-  const stationName = station ? `${station.name} station · ${cm(station.elevation)} m` : "";
+  const stationName = station ? `${station.name} station · ${fmt(station.elevation)} m` : "";
 
   return (
-    <Card className="h-full p-4!">
+    <Card compact className="h-full">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-sm font-medium text-muted">{name} snow depth</h3>
         {ok ? (
@@ -63,10 +63,7 @@ export default function SnowDepthCard({
             {ok.depths.map((d) => (
               <div key={d.label}>
                 <p className="text-xs text-muted">{d.label}</p>
-                <p className="font-display text-4xl font-bold tabular-nums text-ink">
-                  {cm(d.cm)}
-                  <span className="ml-1 text-lg text-muted">cm</span>
-                </p>
+                <Figure value={fmt(d.cm)} unit="cm" size="lg" />
               </div>
             ))}
 
@@ -76,7 +73,7 @@ export default function SnowDepthCard({
                 <div className="mt-0.5 flex gap-5">
                   {ok.snowfall.map((s) => (
                     <div key={s.label}>
-                      <p className="font-display text-lg font-bold tabular-nums text-ink">{cm(s.cm)} cm</p>
+                      <p className="font-display text-lg font-bold tabular-nums text-ink">{fmt(s.cm)} cm</p>
                       <p className="text-xs text-faint">{s.label}</p>
                     </div>
                   ))}
@@ -93,9 +90,9 @@ export default function SnowDepthCard({
           )}
           {reading && station && (
             <p className="mt-3 text-xs text-faint">
-              Nearby, the {station.name} station ({cm(station.elevation)} m, {station.km} km
+              Nearby, the {station.name} station ({fmt(station.elevation)} m, {station.km} km
               away) reads{" "}
-              <span className="font-display font-bold tabular-nums text-ink-2">{cm(reading.snow!)} cm</span>
+              <span className="font-display font-bold tabular-nums text-ink-2">{fmt(reading.snow!)} cm</span>
               {/* The time already ends in "a.m." or "p.m.". */}
               {stationTime ? ` at ${stationTime}` : "."}
             </p>
@@ -112,15 +109,13 @@ export default function SnowDepthCard({
           {reading && station && (
             <div>
               <p className="text-xs text-muted">{stationName}</p>
-              <p className="font-display text-4xl font-bold tabular-nums text-ink">
-                {cm(reading.snow!)}
-                <span className="ml-1 text-lg text-muted">cm</span>
+              <Figure value={fmt(reading.snow!)} unit="cm" size="lg">
                 {reading.snow24 != null && reading.snow24 > 0 && (
-                  <span className="ml-3 text-base text-ink-2">
-                    +{cm(reading.snow24)} cm in 24 h
+                  <span className="ml-3 text-base font-normal text-ink-2">
+                    +{fmt(reading.snow24)} cm in 24 h
                   </span>
                 )}
-              </p>
+              </Figure>
               <p className="mt-1 text-xs text-faint">
                 One sensor, so snow on the slopes can differ. {station.where},{" "}
                 {station.km} km from the lifts{stationTime && ` · read at ${stationTime}`}

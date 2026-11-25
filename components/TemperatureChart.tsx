@@ -1,5 +1,5 @@
 import BubbleChart, { niceDomain } from "@/components/BubbleChart";
-import { Card } from "@/components/Ui";
+import { Card, CardTitle } from "@/components/Ui";
 import type { MountainId } from "@/config/mountains";
 import type { PointReading } from "@/lib/Forecast";
 
@@ -15,16 +15,14 @@ export default function TemperatureChart({
 
   return (
     <Card>
-      <h3 className="font-semibold text-ink">Temperature by elevation</h3>
-      <p className="mb-5 mt-1 text-xs text-muted">
-        Model estimates at each lift, not station readings
-      </p>
+      <CardTitle note="Model estimates at each lift, not station readings" className="mb-5">
+        Temperature by elevation
+      </CardTitle>
       <BubbleChart
         rows={readings.map((r) => ({
           label: r.label,
           value: r.temp,
           display: `${r.temp}°`,
-          warm: r.temp > 0,
           color: r.color,
           mountain: r.id.split("-")[0] as MountainId,
         }))}

@@ -54,3 +54,11 @@ export function highestDanger(day: DangerDay): DangerLevel | null {
   if (rated.length === 0) return null;
   return rated.reduce((a, b) => (DANGER_LEVELS.indexOf(b) > DANGER_LEVELS.indexOf(a) ? b : a));
 }
+
+// Today's highest rated danger, or null when today carries no rating (early
+// season, no rating, no current forecast) or the forecast couldn't be loaded.
+export function todayDanger(forecast: AvalancheForecast | null | undefined): DangerLevel | null {
+  if (forecast?.status !== "ok" || forecast.note != null) return null;
+  const today = forecast.days[0];
+  return today ? highestDanger(today) : null;
+}

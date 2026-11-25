@@ -1,4 +1,5 @@
-import { Card, PillLink } from "@/components/Ui";
+import PillLink from "@/components/PillLink";
+import { Card } from "@/components/Ui";
 import type { MountainWebcams } from "@/config/webcams";
 
 // Each cam is the resort's own embed, loaded lazily so cams below the fold

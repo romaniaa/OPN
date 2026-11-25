@@ -1,6 +1,7 @@
 import { cacheLife } from "next/cache";
 import { MOUNTAINS } from "@/config/mountains";
 import { ZONES } from "@/config/zones";
+import { fmt } from "@/lib/Format";
 import type { PlaceId } from "@/lib/Model";
 import { getSnowReport, isSnowSeason, type SnowReport } from "@/lib/SnowReport";
 import { getHillSnowStation, getZoneStations, type ZoneStation } from "@/lib/Stations";
@@ -18,7 +19,6 @@ export interface SnowNow {
   saved?: boolean; // the last report kept, shown because the resort couldn't be read
 }
 
-const fmt = (n: number) => n.toLocaleString("en-CA");
 
 // A resort report's headline depth (listed first) and 24-hour snowfall.
 export function snowFromReport(report: SnowReport | null): SnowNow | undefined {
@@ -70,9 +70,11 @@ export async function getSnowNow(): Promise<Partial<Record<PlaceId, SnowNow>>> {
 
   // Hills: the report, else (in the snow season only) the station beside the hill.
   const inSeason = isSnowSeason(new Date());
-  const [reports, stations] = await Promise.all([
+  // All three sources at once: a cold cache waits on the slowest, not their sum.
+  const [reports, stations, zones] = await Promise.all([
     Promise.allSettled(MOUNTAINS.map((m) => getSnowReport(m.id))),
     Promise.allSettled(MOUNTAINS.map((m) => getHillSnowStation(m.id))),
+    Promise.allSettled(ZONES.map((z) => getZoneStations(z.id))),
   ]);
   MOUNTAINS.forEach((m, i) => {
     const report = reports[i];
@@ -85,7 +87,6 @@ export async function getSnowNow(): Promise<Partial<Record<PlaceId, SnowNow>>> {
     if (snow) out[m.id] = snow;
   });
 
-  const zones = await Promise.allSettled(ZONES.map((z) => getZoneStations(z.id)));
   zones.forEach((r, i) => {
     if (r.status === "rejected") {
       console.error("Station failure:", r.reason);

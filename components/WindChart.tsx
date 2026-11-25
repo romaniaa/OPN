@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import BubbleChart from "@/components/BubbleChart";
-import { Card } from "@/components/Ui";
+import { Card, CardTitle } from "@/components/Ui";
 import type { MountainId } from "@/config/mountains";
 
 export interface WindRow {
@@ -22,12 +22,7 @@ export default function WindChart({ rows }: { rows: WindRow[] }) {
   return (
     <Card>
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold text-ink">Wind speed</h3>
-          <p className="mt-1 text-xs text-muted">
-            Model wind at 10 m above ground
-          </p>
-        </div>
+        <CardTitle note="Model wind at 10 m above ground">Wind speed</CardTitle>
         <div className="flex border border-line-2 font-display text-sm uppercase tracking-wider">
           {(["avg", "gust"] as const).map((m) => (
             <button

@@ -1,7 +1,8 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { PillLink } from "@/components/Ui";
+import { Check, Plus } from "@/components/Icons";
+import PillLink from "@/components/PillLink";
 import { useDashboard } from "@/components/useDashboard";
 
 // Adds a hill or zone to the visitor's dashboard, or takes it off. Large (on a
@@ -37,18 +38,7 @@ export default function PinButton({
           on ? "text-ink" : "text-muted hover:text-ink"
         }`}
       >
-        <svg
-          viewBox="0 0 16 16"
-          className="h-3.5 w-3.5"
-          fill="none"
-          stroke={on ? color : "currentColor"}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d={on ? "M3 8.5 6.5 12 13 4.5" : "M8 3v10M3 8h10"} />
-        </svg>
+        {on ? <Check stroke={color} strokeWidth={2} /> : <Plus />}
         {on ? "On My hills" : "Add to My hills"}
       </button>
     );
@@ -70,29 +60,8 @@ export default function PinButton({
           style={{ "--orb": color } as CSSProperties}
           aria-hidden="true"
         >
-          <svg
-            data-when="off"
-            className="orb-icon h-4 w-4"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <path d="M8 3v10M3 8h10" />
-          </svg>
-          <svg
-            data-when="on"
-            className="orb-icon h-4 w-4"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.25"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 8.5 6.5 12 13 4.5" />
-          </svg>
+          <Plus data-when="off" className="orb-icon h-4 w-4" />
+          <Check data-when="on" className="orb-icon h-4 w-4" />
         </span>
         <span className={on ? "font-medium text-ink" : "text-ink-2"}>
           {on ? "On My hills" : "Add to My hills"}

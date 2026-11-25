@@ -1,6 +1,7 @@
 import { cacheLife } from "next/cache";
-import { MOUNTAINS, type MountainId } from "@/config/mountains";
-import { ZONES, type ZoneId } from "@/config/zones";
+import { MOUNTAINS } from "@/config/mountains";
+import { ZONES } from "@/config/zones";
+import type { PlaceId } from "@/lib/Place";
 import { summariseDays, type DayForecast } from "@/lib/Daily";
 import { freezingLevel, type Profile, type WindProfile } from "@/lib/Profile";
 
@@ -168,7 +169,7 @@ export interface ModelHour {
 }
 
 // Everywhere the site shows current weather: every hill and backcountry zone.
-export type PlaceId = MountainId | ZoneId;
+export type { PlaceId } from "@/lib/Place";
 // Each with the heights its forecast is summarised at: a hill's top and bottom
 // lift, a zone's highest and lowest height.
 const PLACES: {
@@ -184,7 +185,7 @@ const PLACES: {
     top: m.lifts.top.elevation,
     bottom: m.lifts.bottom.elevation,
   })),
-  ...ZONES.map((z) => ({ ...z, top: Math.max(...z.heights), bottom: Math.min(...z.heights) })),
+  ...ZONES,
 ];
 
 // The local time zone of a hill or zone, for days and times shown for it.

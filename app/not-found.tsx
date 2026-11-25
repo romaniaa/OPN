@@ -1,34 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MOUNTAINS } from "@/config/mountains";
+import { PAGE_TITLE, Page } from "@/components/Page";
+import { PLACES } from "@/lib/Place";
 
 export const metadata: Metadata = { title: "Page not found" };
 
 export default function NotFound() {
   return (
-    <>
-      <main className="min-h-screen px-4 py-8 text-ink md:px-10">
-        <div className="mx-auto max-w-8xl space-y-4">
-          <h1 className="text-4xl font-extrabold sm:text-5xl md:text-6xl">Page not found</h1>
-          <p className="text-ink-2">
-            There&apos;s nothing at this address. Try one of the hills:
-          </p>
-          <ul className="flex flex-wrap gap-4">
-            <li>
-              <Link href="/" className="underline hover:text-ink">
-                North Shore overview
-              </Link>
-            </li>
-            {MOUNTAINS.map((m) => (
-              <li key={m.id}>
-                <Link href={`/${m.id}`} className="underline hover:text-ink">
-                  {m.fullName}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </main>
-    </>
+    <Page transition={false} className="space-y-4">
+      <h1 className={PAGE_TITLE}>Page not found</h1>
+      <p className="text-ink-2">There&apos;s nothing at this address. Try one of the hills:</p>
+      <ul className="flex flex-wrap gap-4">
+        <li>
+          <Link href="/" className="underline hover:text-ink">
+            My hills
+          </Link>
+        </li>
+        {PLACES.filter((p) => p.kind === "hill").map((p) => (
+          <li key={p.id}>
+            <Link href={p.href} className="underline hover:text-ink">
+              {p.fullName}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Page>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useState } from "react";
+import { Pencil } from "@/components/Icons";
 import { MY_HILLS_DRAWER_ID, openMyHills, usePickerLabel } from "@/components/MyHillsDrawer";
 import { useDashboard } from "@/components/useDashboard";
 import { applyToDashboard } from "@/lib/Dashboard";
@@ -64,18 +65,7 @@ export default function DashboardControls() {
           }}
           className="orb-pill orb-pill-sm disabled:opacity-60"
         >
-          <svg
-            viewBox="0 0 16 16"
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M3 13h3l7-7-3-3-7 7v3Z" />
-          </svg>
+          <Pencil className="h-4 w-4" />
           {pickerLabel}
         </button>
         {ids.length > 0 && (

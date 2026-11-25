@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   useEffect,
   useRef,
@@ -11,14 +10,13 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
-import MountainIcon from "@/components/MountainIcon";
+import { flushSync } from "react-dom";
+import { Check, Cross } from "@/components/Icons";
+import PlaceIcon from "@/components/PlaceIcon";
 import { NAV_FADE } from "@/components/Transitions";
-import RangeIcon from "@/components/RangeIcon";
 import { useDashboard } from "@/components/useDashboard";
 import { useSheet } from "@/components/useSheet";
-import { MOUNTAINS, type MountainId } from "@/config/mountains";
-import { REGIONS } from "@/config/regions";
-import { ZONES } from "@/config/zones";
+import { PLACES_BY_REGION, placeById, type Place } from "@/lib/Place";
 
 // The id of the one drawer, for buttons' aria-controls. It's rendered once, in
 // the nav, which the layout keeps mounted on every page.
@@ -39,39 +37,6 @@ export function usePickerLabel() {
   return chosen && saved.length > 0 ? "Edit Your Hills" : "Pick your hills";
 }
 
-export interface PickerGroup {
-  region: string;
-  places: { id: string; name: string; color: string; kind: "Resort" | "Backcountry" }[];
-}
-
-// Each region's hills, then its backcountry zones.
-const GROUPS: PickerGroup[] = REGIONS.map((r) => ({
-  region: r.name,
-  places: [
-    ...MOUNTAINS.filter((m) => m.region === r.id).map((m) => ({
-      id: m.id,
-      name: m.fullName,
-      color: m.color,
-      kind: "Resort" as const,
-    })),
-    ...ZONES.filter((z) => z.region === r.id).map((z) => ({
-      id: z.id,
-      name: z.fullName,
-      color: z.color,
-      kind: "Backcountry" as const,
-    })),
-  ],
-})).filter((g) => g.places.length > 0);
-
-type Place = PickerGroup["places"][number];
-
-function PlaceIcon({ place }: { place: Place }) {
-  return place.kind === "Backcountry" ? (
-    <RangeIcon color={place.color} className="h-3.5 w-5 shrink-0" />
-  ) : (
-    <MountainIcon id={place.id as MountainId} color={place.color} className="h-3.5 w-5 shrink-0" />
-  );
-}
 
 // A small round button in the "Your hills" list.
 function RowButton({
@@ -111,19 +76,6 @@ const Grip = () => (
   </svg>
 );
 
-const Cross = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
-  <svg
-    viewBox="0 0 16 16"
-    className={className}
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    aria-hidden="true"
-  >
-    <path d="m4 4 8 8M12 4l-8 8" />
-  </svg>
-);
 
 // A drag in progress: the row being dragged (from), the slot it would land in
 // (over), how far the pointer has moved, and every row's box when it started.
@@ -238,7 +190,7 @@ function YourHills({
               onPointerUp={drop}
               onPointerCancel={() => setDrag(null)}
               onKeyDown={(e) => onKey(e, p.id)}
-              aria-label={`Reorder ${p.name}, ${i + 1} of ${picked.length}. Drag, or use the up and down arrow keys.`}
+              aria-label={`Reorder ${p.fullName}, ${i + 1} of ${picked.length}. Drag, or use the up and down arrow keys.`}
               title="Drag to reorder"
               className={`-ml-1 flex h-9 w-6 shrink-0 touch-none select-none items-center justify-center rounded text-faint hover:text-ink focus-visible:text-ink ${
                 dragging ? "cursor-grabbing text-ink" : "cursor-grab"
@@ -247,8 +199,8 @@ function YourHills({
               <Grip />
             </button>
             <PlaceIcon place={p} />
-            <span className="min-w-0 flex-1 truncate text-[15px]">{p.name}</span>
-            <RowButton label={`Remove ${p.name}`} danger onClick={() => remove(p.id)}>
+            <span className="min-w-0 flex-1 truncate text-[15px]">{p.fullName}</span>
+            <RowButton label={`Remove ${p.fullName}`} danger onClick={() => remove(p.id)}>
               <Cross />
             </RowButton>
           </li>
@@ -262,144 +214,129 @@ function YourHills({
 // closes on Escape and returns focus to the button that opened it. One column
 // at every width: the hills you've picked, in order, to drag or remove, then
 // every region's hills and zones to tick.
+//
+// It's on every page but rarely opened, so its contents are drawn on the first
+// open rather than sent in every page's HTML.
 export default function MyHillsDrawer() {
-  const { ids, save, toggle, move, remove } = useDashboard();
   const label = usePickerLabel();
-  const { ref: drawer, open, close } = useSheet();
-  const drawerId = MY_HILLS_DRAWER_ID;
+  const { ref: drawer, open, close, onClick } = useSheet();
+  const [drawn, setDrawn] = useState(false);
 
   useEffect(() => {
-    window.addEventListener(OPEN_EVENT, open);
-    return () => window.removeEventListener(OPEN_EVENT, open);
+    const onOpen = () => {
+      // Draw the contents before opening, so focus lands inside as usual.
+      flushSync(() => setDrawn(true));
+      open();
+    };
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_EVENT, onOpen);
   }, [open]);
-
-  // Close on navigation, including browser back and forward.
-  const pathname = usePathname();
-  useEffect(() => {
-    close();
-  }, [pathname, close]);
-
-  const places = GROUPS.flatMap((g) => g.places);
-  const picked = ids
-    .map((id) => places.find((p) => p.id === id))
-    .filter((p): p is Place => p != null);
 
   return (
     <dialog
-      id={drawerId}
+      id={MY_HILLS_DRAWER_ID}
       ref={drawer}
       aria-label={label}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
-      }}
+      onClick={onClick}
       className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-none w-full max-w-md border-0 border-l border-line-2 bg-sunken p-0 text-ink shadow-2xl transition-[translate] duration-300 ease-out starting:open:translate-x-full data-closing:translate-x-full data-closing:ease-in backdrop:bg-black/50 backdrop:transition-[background-color] backdrop:duration-300 starting:open:backdrop:bg-transparent data-closing:backdrop:bg-transparent motion-reduce:transition-none motion-reduce:backdrop:transition-none"
     >
-      <div className="flex h-full flex-col">
-        <div className="flex items-start justify-between gap-3 border-b border-line-2 px-5 py-4">
-          <div>
-            {/* <h2 id={`${drawerId}-title`} className="text-2xl font-extrabold">
-              Your Hills
-            </h2> */}
-            <p className="mt-1 text-sm text-muted">
-              Check the ones you ride. They&apos;re saved on this device, no account
-              needed.
-            </p>
-          </div>
-          <button type="button" onClick={close} aria-label="Close" className="orb orb-sm shrink-0">
-            <Cross />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-8">
-          <section aria-labelledby={`${drawerId}-yours`} className="pt-5">
-            <h3
-              id={`${drawerId}-yours`}
-              className="text-xs uppercase tracking-widest text-muted"
-            >
-              Your hills{picked.length > 0 && ` · ${picked.length}`}
-            </h3>
-            {picked.length > 0 ? (
-              <YourHills picked={picked} save={save} move={move} remove={remove} />
-            ) : (
-              <p className="mt-2 border border-dashed border-line-2 px-3 py-3 text-sm text-muted">
-                Nothing yet. Tick a few below and they&apos;ll show up here.
-              </p>
-            )}
-          </section>
-
-          <fieldset className="mt-6 space-y-5">
-            <legend className="text-xs uppercase tracking-widest text-muted">Add more</legend>
-            {GROUPS.map((g) => (
-              <div key={g.region} className="pt-3">
-                <p className="text-sm font-semibold text-ink">{g.region}</p>
-                <ul className="-mx-2 mt-1">
-                  {g.places.map((p) => (
-                    <li key={p.id}>
-                      <label
-                        className="check-row text-[15px] text-ink"
-                        style={{ "--orb": p.color } as CSSProperties}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={ids.includes(p.id)}
-                          onChange={() => toggle(p.id)}
-                          className="sr-only"
-                        />
-                        <span className="check-box" aria-hidden="true">
-                          <svg
-                            viewBox="0 0 16 16"
-                            className="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.25"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M3 8.5 6.5 12 13 4.5" />
-                          </svg>
-                        </span>
-                        <PlaceIcon place={p} />
-                        <span className="min-w-0">
-                          {p.name}
-                          {p.kind === "Backcountry" && (
-                            <span className="ml-1.5 text-xs text-muted">backcountry</span>
-                          )}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </fieldset>
-
-          <p className="mt-6 text-xs text-faint">
-            You can also add any hill from{" "}
-            <Link
-              href="/hills"
-              transitionTypes={NAV_FADE}
-              onClick={close}
-              className="underline hover:text-ink"
-            >
-              All hills
-            </Link>{" "}
-            or its own page.
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between gap-3 border-t border-line-2 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          {picked.length > 1 ? (
-            <button type="button" onClick={() => save([])} className="orb-pill orb-pill-sm">
-              Start over
-            </button>
-          ) : (
-            <span />
-          )}
-          <button type="button" onClick={close} className="orb-pill orb-pill-sm px-4" data-on>
-            Done
-          </button>
-        </div>
-      </div>
+      {drawn && <DrawerContents close={close} />}
     </dialog>
+  );
+}
+
+function DrawerContents({ close }: { close: () => void }) {
+  const { ids, save, toggle, move, remove } = useDashboard();
+  const drawerId = MY_HILLS_DRAWER_ID;
+  const picked = ids.map(placeById).filter((p): p is Place => p != null);
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-start justify-between gap-3 border-b border-line-2 px-5 py-4">
+        <p className="mt-1 text-sm text-muted">
+          Check the ones you ride. They&apos;re saved on this device, no account needed.
+        </p>
+        <button type="button" onClick={close} aria-label="Close" className="orb orb-sm shrink-0">
+          <Cross />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-8">
+        <section aria-labelledby={`${drawerId}-yours`} className="pt-5">
+          <h3 id={`${drawerId}-yours`} className="text-xs uppercase tracking-widest text-muted">
+            Your hills{picked.length > 0 && ` · ${picked.length}`}
+          </h3>
+          {picked.length > 0 ? (
+            <YourHills picked={picked} save={save} move={move} remove={remove} />
+          ) : (
+            <p className="mt-2 border border-dashed border-line-2 px-3 py-3 text-sm text-muted">
+              Nothing yet. Tick a few below and they&apos;ll show up here.
+            </p>
+          )}
+        </section>
+
+        <fieldset className="mt-6 space-y-5">
+          <legend className="text-xs uppercase tracking-widest text-muted">Add more</legend>
+          {PLACES_BY_REGION.map((g) => (
+            <div key={g.region.id} className="pt-3">
+              <p className="text-sm font-semibold text-ink">{g.region.name}</p>
+              <ul className="-mx-2 mt-1">
+                {g.places.map((p) => (
+                  <li key={p.id}>
+                    <label
+                      className="check-row text-[15px] text-ink"
+                      style={{ "--orb": p.color } as CSSProperties}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={ids.includes(p.id)}
+                        onChange={() => toggle(p.id)}
+                        className="sr-only"
+                      />
+                      <span className="check-box" aria-hidden="true">
+                        <Check className="h-4 w-4" />
+                      </span>
+                      <PlaceIcon place={p} className="h-3.5 w-5" />
+                      <span className="min-w-0">
+                        {p.fullName}
+                        {p.kind === "zone" && (
+                          <span className="ml-1.5 text-xs text-muted">backcountry</span>
+                        )}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </fieldset>
+
+        <p className="mt-6 text-xs text-faint">
+          You can also add any hill from{" "}
+          <Link
+            href="/hills"
+            transitionTypes={NAV_FADE}
+            onClick={close}
+            className="underline hover:text-ink"
+          >
+            All hills
+          </Link>{" "}
+          or its own page.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 border-t border-line-2 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {picked.length > 1 ? (
+          <button type="button" onClick={() => save([])} className="orb-pill orb-pill-sm">
+            Start over
+          </button>
+        ) : (
+          <span />
+        )}
+        <button type="button" onClick={close} className="orb-pill orb-pill-sm px-4" data-on>
+          Done
+        </button>
+      </div>
+    </div>
   );
 }

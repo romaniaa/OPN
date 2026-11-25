@@ -1,5 +1,6 @@
 import { PRECIP_THRESHOLD, precipAt, type Condition } from "@/lib/Conditions";
 import { tempAt, windAloft, type Profile, type WindProfile } from "@/lib/Profile";
+import { round1 } from "@/lib/Format";
 
 // A day of the model forecast for one hill or zone, summarised at its top and
 // bottom heights: what the forecast card on its page shows. Built from the same
@@ -45,7 +46,6 @@ export interface HourInput {
   gust: number | null; // km/h
 }
 
-const round1 = (n: number) => Math.round(n * 10) / 10;
 
 function height(hours: HourInput[], z: number): HeightDay {
   const temps = hours.flatMap((h) => (h.profile ? [tempAt(h.profile, z)] : []));

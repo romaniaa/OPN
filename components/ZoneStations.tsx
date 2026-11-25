@@ -1,6 +1,5 @@
-import { Card } from "@/components/Ui";
-import { compass } from "@/components/WindCard";
-import { fmt } from "@/lib/Conditions";
+import { AvalancheCanada, Card, CardTitle } from "@/components/Ui";
+import { compass, fmt, round1 } from "@/lib/Format";
 import { tempAt } from "@/lib/Model";
 import type { ZoneStation } from "@/lib/Stations";
 import type { HillNow } from "@/lib/Weather";
@@ -31,11 +30,12 @@ export default function ZoneStations({
   const sources = [...new Set(stations.map((s) => s.source))];
   return (
     <Card className="overflow-x-auto">
-      <h3 className="font-semibold text-ink">Weather stations</h3>
-      <p className="mb-4 mt-1 text-xs text-muted">
-        Measured, not modelled. Model temperature at each station&apos;s height shown
-        for comparison.
-      </p>
+      <CardTitle
+        note="Measured, not modelled. Model temperature at each station's height shown for comparison."
+        className="mb-4"
+      >
+        Weather stations
+      </CardTitle>
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead>
           <tr className="text-xs text-muted">
@@ -50,7 +50,7 @@ export default function ZoneStations({
         <tbody>
           {stations.map((s) => {
             const r = s.reading;
-            const model = now ? Math.round(tempAt(now.profile, s.elevation) * 10) / 10 : null;
+            const model = now ? round1(tempAt(now.profile, s.elevation)) : null;
             return (
               <tr key={s.id} className="border-t border-line align-top">
                 <td className="py-2.5 pr-3">
@@ -105,11 +105,7 @@ export default function ZoneStations({
         </tbody>
       </table>
       <p className="mt-3 text-xs text-faint">
-        {sources.join(" and ")} stations, via{" "}
-        <a href="https://avalanche.ca" className="underline hover:text-ink">
-          Avalanche Canada
-        </a>
-        . Station sites can be sheltered or exposed, so readings vary a lot over short
+        {sources.join(" and ")} stations, via <AvalancheCanada />. Station sites can be sheltered or exposed, so readings vary a lot over short
         distances.
       </p>
     </Card>

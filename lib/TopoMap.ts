@@ -1,4 +1,4 @@
-import { seeded } from "@/lib/Sketch";
+import { polylinePath, seeded } from "@/lib/Sketch";
 
 // The contour map behind the top of every page (components/Topo.tsx): made-up
 // terrain, traced the way a real topo map is, in clean lines like the hill
@@ -12,7 +12,7 @@ import { seeded } from "@/lib/Sketch";
 // so it's the same map every time.
 //
 // It's served as one static SVG (app/topo.svg/route.ts) rather than drawn into
-// every page, since the lines come to about 100 KB.
+// every page, since the lines come to about 75 KB (11 KB gzipped).
 
 const W = 1600;
 const H = 560;
@@ -168,8 +168,9 @@ function smooth(pts: Pt[], rounds = 2): Pt[] {
   return out;
 }
 
-const path = (pts: Pt[]) =>
-  pts.map(([x, y], i) => `${i ? "L" : "M"}${Math.round(x)} ${Math.round(y)}`).join("");
+// Lines in whole map units, as compact relative path data. (Dropping
+// near-collinear points would save a little more but visibly facets them.)
+const path = (pts: Pt[]) => polylinePath(pts);
 
 // Both kinds of contour as one path each.
 function contours() {

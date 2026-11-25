@@ -1,17 +1,20 @@
 import type { ReactNode } from "react";
+import ConditionChip from "@/components/ConditionChip";
 import { Card } from "@/components/Ui";
-import { compass } from "@/components/WindCard";
-import { CONDITION, PRECIP, fmt } from "@/lib/Conditions";
+import { PRECIP } from "@/lib/Conditions";
+import { compass, fmt, weekday } from "@/lib/Format";
 import type { DayForecast, HeightDay } from "@/lib/Daily";
 
 // Day name and date for a YYYY-MM-DD, read as a calendar date (no time zone
 // shift): "Today", then "Wed" and "Nov 18".
 function dayLabel(date: string, i: number) {
-  const d = new Date(`${date}T12:00:00Z`);
-  const opts = { timeZone: "UTC" } as const;
   return {
-    name: i === 0 ? "Today" : d.toLocaleDateString("en-CA", { ...opts, weekday: "short" }),
-    date: d.toLocaleDateString("en-CA", { ...opts, month: "short", day: "numeric" }),
+    name: i === 0 ? "Today" : weekday(date),
+    date: new Date(`${date}T12:00:00Z`).toLocaleDateString("en-CA", {
+      timeZone: "UTC",
+      month: "short",
+      day: "numeric",
+    }),
   };
 }
 
@@ -80,7 +83,6 @@ export default function DailyForecast({
         <ol className="grid min-w-[1050px] grid-cols-7 gap-px border border-line bg-line lg:min-w-[880px]">
           {days.map((d, i) => {
             const label = dayLabel(d.date, i);
-            const c = CONDITION[d.condition];
             return (
               <li key={d.date} className="space-y-3 whitespace-nowrap bg-surface p-3">
                 <div>
@@ -92,7 +94,7 @@ export default function DailyForecast({
                   </p>
                   <p className="text-xs text-muted">{label.date}</p>
                 </div>
-                <span className={`chip ${c.chip}`}>{c.label}</span>
+                <ConditionChip condition={d.condition} />
                 <Row label={`New snow · ${top.label.toLowerCase()}`}>
                   <Precip h={d.top} big />
                 </Row>

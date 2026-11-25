@@ -2,65 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type MouseEvent, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { type MouseEvent, type ReactNode, useId, useLayoutEffect, useRef, useState } from "react";
+import { Cross } from "@/components/Icons";
 import Logo from "@/components/Logo";
-import MountainIcon from "@/components/MountainIcon";
 import MountainsGlyph from "@/components/MountainsGlyph";
 import MyHillsDrawer, {
   MY_HILLS_DRAWER_ID,
   openMyHills,
   usePickerLabel,
 } from "@/components/MyHillsDrawer";
-import RangeIcon from "@/components/RangeIcon";
+import PlaceIcon from "@/components/PlaceIcon";
 import ThemeToggle from "@/components/ThemeToggle";
 import { NAV_BACK, NAV_FADE, NAV_FORWARD } from "@/components/Transitions";
 import { useDashboard } from "@/components/useDashboard";
 import { useSheet } from "@/components/useSheet";
-import { MOUNTAINS, type MountainId } from "@/config/mountains";
 import { REGIONS, type RegionId } from "@/config/regions";
-import { ZONES } from "@/config/zones";
 import { DANGER_STYLE } from "@/lib/DangerStyle";
+import { fmt } from "@/lib/Format";
+import { PLACES_BY_REGION, placeById, type Place } from "@/lib/Place";
 import type { NavStatus } from "@/lib/Places";
 
 // Tabs: My hills (the home page), one per region, and Backcountry. A hill's page
 // highlights its region; a zone's page highlights Backcountry.
 type ItemId = "mine" | "backcountry" | RegionId;
-
-interface Place {
-  id: string;
-  href: string;
-  name: string;
-  color: string;
-  icon?: MountainId; // hills have their silhouette; zones the generic range
-  backcountry: boolean;
-  region: RegionId;
-}
-
-const PLACES: Place[] = [
-  ...MOUNTAINS.map((m) => ({
-    id: m.id,
-    href: `/${m.id}`,
-    name: m.fullName,
-    color: m.color,
-    icon: m.id,
-    backcountry: false,
-    region: m.region,
-  })),
-  ...ZONES.map((z) => ({
-    id: z.id,
-    href: `/backcountry/${z.id}`,
-    name: z.fullName,
-    color: z.color,
-    backcountry: true,
-    region: z.region,
-  })),
-];
-
-// The drawer lists each region's hills, then its backcountry zones.
-const GROUPS = REGIONS.map((r) => ({
-  region: r,
-  places: PLACES.filter((p) => p.region === r.id),
-}));
 
 const isRegion = (id: ItemId | null) => REGIONS.some((r) => r.id === id);
 
@@ -69,7 +33,8 @@ function activeItem(pathname: string): ItemId | null {
   if (pathname === "/backcountry" || pathname.startsWith("/backcountry/")) return "backcountry";
   const region = REGIONS.find((r) => pathname === `/${r.id}`);
   if (region) return region.id;
-  return MOUNTAINS.find((m) => pathname === `/${m.id}`)?.region ?? null;
+  const place = placeById(pathname.slice(1));
+  return place?.kind === "hill" ? place.region : null;
 }
 
 // One hill or zone in the drawer: name, live status and freezing level.
@@ -97,14 +62,10 @@ function PlaceRow({
         style={current ? { borderLeftColor: place.color } : undefined}
       >
         <span className="flex w-5 shrink-0 justify-center" aria-hidden="true">
-          {place.icon ? (
-            <MountainIcon id={place.icon} color={place.color} className="h-3.5 w-5" />
-          ) : (
-            <RangeIcon color={place.color} className="h-3.5 w-5" />
-          )}
+          <PlaceIcon place={place} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-medium text-ink">{place.name}</span>
+          <span className="block truncate text-[15px] font-medium text-ink">{place.fullName}</span>
           <span className="mt-0.5 flex items-center gap-2 text-xs text-muted">
             {status?.danger && (
               <span
@@ -113,7 +74,7 @@ function PlaceRow({
               />
             )}
             <span className="truncate">
-              {place.backcountry ? "Backcountry · " : ""}
+              {place.kind === "zone" ? "Backcountry · " : ""}
               {status?.status ?? "Status unavailable"}
             </span>
           </span>
@@ -121,7 +82,7 @@ function PlaceRow({
         {status?.freezingLevel != null && (
           <span className="shrink-0 text-right">
             <span className="block font-mono text-sm text-ink">
-              {status.freezingLevel.toLocaleString("en-CA")}
+              {fmt(status.freezingLevel)}
               <span className="text-[10px] text-muted"> m</span>
             </span>
             <span className="block text-[10px] uppercase tracking-wider text-faint">
@@ -131,6 +92,88 @@ function PlaceRow({
         )}
       </Link>
     </li>
+  );
+}
+
+// A link in the drawer: it closes the drawer, and marks itself when it's the
+// page being shown.
+function DrawerLink({
+  href,
+  pathname,
+  onNavigate,
+  back = false,
+  className = "orb-pill orb-pill-sm",
+  children,
+}: {
+  href: string;
+  pathname: string;
+  onNavigate: () => void;
+  back?: boolean; // heading home, to My hills
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      transitionTypes={back ? NAV_BACK : NAV_FORWARD}
+      onClick={onNavigate}
+      aria-current={pathname === href ? "page" : undefined}
+      className={className}
+    >
+      {children}
+    </Link>
+  );
+}
+
+// A titled group in the drawer, with a link to its page on the right.
+function DrawerSection({
+  title,
+  link,
+  className = "mt-4",
+  children,
+}: {
+  title: string;
+  link: ReactNode;
+  className?: string;
+  children: ReactNode;
+}) {
+  const id = useId();
+  return (
+    <section aria-labelledby={id} className={`px-1 ${className}`}>
+      <div className="flex items-baseline justify-between px-3 pb-1">
+        <h2 id={id} className="text-sm text-muted">
+          {title}
+        </h2>
+        {link}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function PlaceRows({
+  places,
+  status,
+  pathname,
+  onNavigate,
+}: {
+  places: Place[];
+  status: NavStatus | null;
+  pathname: string;
+  onNavigate: () => void;
+}) {
+  return (
+    <ul>
+      {places.map((p) => (
+        <PlaceRow
+          key={p.id}
+          place={p}
+          status={status?.places[p.id]}
+          current={pathname === p.href}
+          onNavigate={onNavigate}
+        />
+      ))}
+    </ul>
   );
 }
 
@@ -146,15 +189,10 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
   const { hydrated, saved } = useDashboard();
   const pickerLabel = usePickerLabel();
 
-  const { ref: drawer, open, close } = useSheet();
+  const { ref: drawer, open, close, onClick: onDrawerClick } = useSheet();
   // Next keeps recently visited pages mounted but hidden for instant back and
   // forward, so several navs can be in the document at once: ids must be unique.
   const drawerId = useId();
-
-  // Close on navigation, including browser back and forward.
-  useEffect(() => {
-    close();
-  }, [pathname, close]);
 
   // The desktop tabs share one underline that slides to the current tab. It's
   // placed by measuring that tab and setting the bar's style directly, so a tap
@@ -199,9 +237,7 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
   const transitionTo = (id: ItemId) =>
     id === "mine" ? NAV_BACK : isRegion(id) && isRegion(active) ? NAV_FADE : NAV_FORWARD;
 
-  const savedPlaces = saved
-    .map((id) => PLACES.find((p) => p.id === id))
-    .filter((p): p is Place => p != null);
+  const savedPlaces = saved.map(placeById).filter((p): p is Place => p != null);
 
   const quick = "orb-pill orb-pill-sm justify-center text-center";
 
@@ -344,9 +380,7 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
         data-nav-drawer
         ref={drawer}
         aria-label="Site menu"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) close();
-        }}
+        onClick={onDrawerClick}
         className="fixed inset-x-0 top-auto bottom-0 m-0 h-[88dvh] max-h-none w-full max-w-none rounded-t-2xl border-0 border-t border-line-2 bg-sunken p-0 pb-[env(safe-area-inset-bottom)] text-ink shadow-2xl transition-[translate] duration-300 ease-out starting:open:translate-y-full data-closing:translate-y-full data-closing:ease-in backdrop:bg-black/50 backdrop:transition-[background-color] backdrop:duration-300 starting:open:backdrop:bg-transparent data-closing:backdrop:bg-transparent motion-reduce:transition-none motion-reduce:backdrop:transition-none"
       >
         <div className="flex h-full flex-col">
@@ -362,70 +396,32 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
             <div className="flex shrink-0 items-center gap-2">
               <ThemeToggle />
               <button type="button" onClick={close} aria-label="Close menu" className="orb orb-sm">
-                <svg
-                  viewBox="0 0 16 16"
-                  className="h-3.5 w-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  aria-hidden="true"
-                >
-                  <path d="m4 4 8 8M12 4l-8 8" />
-                </svg>
+                <Cross />
               </button>
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto overscroll-contain pb-6">
             <div className="grid grid-cols-2 gap-2 px-4 py-4">
-              <Link
-                href="/backcountry"
-                transitionTypes={NAV_FORWARD}
-                onClick={close}
-                aria-current={pathname === "/backcountry" ? "page" : undefined}
-                className={quick}
-              >
+              <DrawerLink href="/backcountry" pathname={pathname} onNavigate={close} className={quick}>
                 Backcountry
-              </Link>
-              <Link
-                href="/hills"
-                transitionTypes={NAV_FORWARD}
-                onClick={close}
-                aria-current={pathname === "/hills" ? "page" : undefined}
-                className={quick}
-              >
+              </DrawerLink>
+              <DrawerLink href="/hills" pathname={pathname} onNavigate={close} className={quick}>
                 All hills
-              </Link>
+              </DrawerLink>
             </div>
 
-            <section aria-labelledby="drawer-mine" className="px-1">
-              <div className="flex items-baseline justify-between px-3 pb-1">
-                <h2 id="drawer-mine" className="text-sm text-muted">
-                  My hills
-                </h2>
-                <Link
-                  href="/"
-                  transitionTypes={NAV_BACK}
-                  onClick={close}
-                  aria-current={active === "mine" ? "page" : undefined}
-                  className="orb-pill orb-pill-sm"
-                >
+            <DrawerSection
+              title="My hills"
+              className=""
+              link={
+                <DrawerLink href="/" pathname={pathname} onNavigate={close} back>
                   {savedPlaces.length ? "Open" : "Pick some"}
-                </Link>
-              </div>
+                </DrawerLink>
+              }
+            >
               {savedPlaces.length ? (
-                <ul>
-                  {savedPlaces.map((p) => (
-                    <PlaceRow
-                      key={p.id}
-                      place={p}
-                      status={status?.places[p.id]}
-                      current={pathname === p.href}
-                      onNavigate={close}
-                    />
-                  ))}
-                </ul>
+                <PlaceRows places={savedPlaces} status={status} pathname={pathname} onNavigate={close} />
               ) : (
                 <p className="mx-3 border border-dashed border-line-2 px-3 py-3 text-sm text-muted">
                   Pin the hills you ski with{" "}
@@ -433,34 +429,20 @@ export default function NavClient({ status }: { status: NavStatus | null }) {
                   here.
                 </p>
               )}
-            </section>
+            </DrawerSection>
 
-            {GROUPS.map((g) => (
-              <section key={g.region.id} aria-label={g.region.name} className="mt-4 px-1">
-                <div className="flex items-baseline justify-between px-3 pb-1">
-                  <h2 className="text-sm text-muted">{g.region.name}</h2>
-                  <Link
-                    href={`/${g.region.id}`}
-                    transitionTypes={NAV_FORWARD}
-                    onClick={close}
-                    aria-current={pathname === `/${g.region.id}` ? "page" : undefined}
-                    className="orb-pill orb-pill-sm"
-                  >
+            {PLACES_BY_REGION.map((g) => (
+              <DrawerSection
+                key={g.region.id}
+                title={g.region.name}
+                link={
+                  <DrawerLink href={`/${g.region.id}`} pathname={pathname} onNavigate={close}>
                     Region page
-                  </Link>
-                </div>
-                <ul>
-                  {g.places.map((p) => (
-                    <PlaceRow
-                      key={p.id}
-                      place={p}
-                      status={status?.places[p.id]}
-                      current={pathname === p.href}
-                      onNavigate={close}
-                    />
-                  ))}
-                </ul>
-              </section>
+                  </DrawerLink>
+                }
+              >
+                <PlaceRows places={g.places} status={status} pathname={pathname} onNavigate={close} />
+              </DrawerSection>
             ))}
 
             <p className="mt-6 px-4 text-xs text-faint">

@@ -29,11 +29,13 @@ export interface ZoneConfig {
   // from below treeline into the alpine. Round numbers, not exact band limits;
   // Avalanche Canada's elevation bands vary by region and aren't in its API.
   heights: number[];
+  top: number; // the highest of heights, derived
+  bottom: number; // the lowest of heights, derived
   // Avalanche Canada weather stations to show measurements from (config/stations.ts).
   stations: number[];
 }
 
-const LIST: Omit<ZoneConfig, "region">[] = [
+const LIST: Omit<ZoneConfig, "region" | "top" | "bottom">[] = [
   {
     id: "strachan",
     name: "Strachan",
@@ -181,4 +183,9 @@ const LIST: Omit<ZoneConfig, "region">[] = [
   },
 ];
 
-export const ZONES: ZoneConfig[] = LIST.map((z) => ({ ...z, region: regionOf(z.area) }));
+export const ZONES: ZoneConfig[] = LIST.map((z) => ({
+  ...z,
+  region: regionOf(z.area),
+  top: Math.max(...z.heights),
+  bottom: Math.min(...z.heights),
+}));

@@ -3,6 +3,7 @@ import { STATIONS, stationById } from "@/config/stations";
 import { MOUNTAINS, type MountainId } from "@/config/mountains";
 import type { ZoneId } from "@/config/zones";
 import { ZONES } from "@/config/zones";
+import { round1 } from "@/lib/Format";
 
 // Measured weather from automated stations near the backcountry zones, via
 // Avalanche Canada's public feed. Its use falls under the same Avalanche Canada
@@ -62,13 +63,13 @@ function summarise(id: number, rows: Measurement[]): StationSummary | null {
   const before = sorted.find((r) => t0 - Date.parse(r.measurementDateTime) >= DAY_MS - 3600_000);
   const snowBefore = before ? depth(before.snowHeight) : null;
 
-  const round1 = (v: number | null) => (v == null ? null : Math.round(v * 10) / 10);
+  const r1 = (v: number | null) => (v == null ? null : round1(v));
   return {
     id,
     time: latest.measurementDateTime,
-    temp: round1(num(latest.airTempAvg)),
-    tempMin24: temps.length ? round1(Math.min(...temps)) : null,
-    tempMax24: temps.length ? round1(Math.max(...temps)) : null,
+    temp: r1(num(latest.airTempAvg)),
+    tempMin24: temps.length ? r1(Math.min(...temps)) : null,
+    tempMax24: temps.length ? r1(Math.max(...temps)) : null,
     wind: num(latest.windSpeedAvg) == null ? null : Math.round(num(latest.windSpeedAvg)!),
     dir: num(latest.windDirAvg),
     rh: num(latest.relativeHumidity) == null ? null : Math.round(num(latest.relativeHumidity)!),

@@ -1,11 +1,6 @@
-import { Card } from "@/components/Ui";
+import { Card, CardTitle, Figure } from "@/components/Ui";
 import type { StationReading } from "@/lib/Forecast";
-
-const POINTS = [
-  "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
-  "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW",
-];
-export const compass = (deg: number) => POINTS[Math.round(deg / 22.5) % 16];
+import { COMPASS_POINTS, compass } from "@/lib/Format";
 
 // A compass with an arrow pointing where the wind blows to, and its source below.
 export function Compass({ dir, color }: { dir: number; color: string }) {
@@ -21,7 +16,7 @@ export function Compass({ dir, color }: { dir: number; color: string }) {
           className="absolute inset-0 h-full w-full"
           aria-hidden="true"
         >
-          {POINTS.map((p, i) => (
+          {COMPASS_POINTS.map((p, i) => (
             <line
               key={p}
               x1="50"
@@ -47,13 +42,10 @@ export function Compass({ dir, color }: { dir: number; color: string }) {
           <polygon points="50,18 40,34 60,34" fill={color} />
         </svg>
       </div>
-      <p className="mt-2 text-sm text-ink-2">
-        From the {compass(dir)}
-      </p>
+      <p className="mt-2 text-sm text-ink-2">From the {compass(dir)}</p>
     </div>
   );
 }
-
 
 export default function WindCard({
   station,
@@ -64,30 +56,17 @@ export default function WindCard({
 }) {
   return (
     <Card>
-      <h3 className="font-semibold text-ink">Wind</h3>
-      <p className="mt-1 text-xs text-muted">
-        Model wind at 10 m above ground
-      </p>
+      <CardTitle note="Model wind at 10 m above ground">Wind</CardTitle>
 
       <div className="mt-6 flex items-center justify-between gap-6">
         <div className="space-y-4">
           <div>
             <p className="text-xs text-muted">Average</p>
-            <p className="font-display text-5xl font-bold tabular-nums text-ink">
-              {station.wind}
-              <span className="ml-1 text-base font-normal text-muted">
-                km/h
-              </span>
-            </p>
+            <Figure value={station.wind} unit="km/h" size="xl" />
           </div>
           <div>
             <p className="text-xs text-muted">Gusts</p>
-            <p className="font-display text-5xl font-bold tabular-nums text-ink">
-              {station.gust}
-              <span className="ml-1 text-base font-normal text-muted">
-                km/h
-              </span>
-            </p>
+            <Figure value={station.gust} unit="km/h" size="xl" />
           </div>
         </div>
 

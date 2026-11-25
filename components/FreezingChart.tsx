@@ -1,5 +1,5 @@
-import { Card } from "@/components/Ui";
-import { fmt } from "@/lib/Conditions";
+import { Card, Figure } from "@/components/Ui";
+import { fmt } from "@/lib/Format";
 import type { DayStat, FreezingSeries } from "@/lib/Forecast";
 
 type Pt = [number, number];
@@ -77,10 +77,7 @@ export default function FreezingChart({
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3 lg:flex-col lg:items-start lg:justify-start lg:gap-y-5">
         <div>
           <h3 className="font-semibold text-ink">Freezing level now</h3>
-          <p className="mt-1 font-display text-6xl font-bold tabular-nums text-ink">
-            {fmt(current)}
-            <span className="ml-1 text-2xl text-muted">m</span>
-          </p>
+          <Figure value={fmt(current)} unit="m" size="2xl" className="mt-1" />
         </div>
         <dl className="grid grid-cols-[auto_auto] gap-x-4 gap-y-1 text-sm">
           <dt className="text-muted">Past 25 h</dt>
