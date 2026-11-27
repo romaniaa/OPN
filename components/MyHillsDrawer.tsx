@@ -16,6 +16,7 @@ import PlaceIcon from "@/components/PlaceIcon";
 import { NAV_FADE } from "@/components/Transitions";
 import { useDashboard } from "@/components/useDashboard";
 import { useSheet } from "@/components/useSheet";
+import { AREAS } from "@/config/regions";
 import { PLACES_BY_REGION, placeById, type Place } from "@/lib/Place";
 
 // The id of the one drawer, for buttons' aria-controls. It's rendered once, in
@@ -76,6 +77,43 @@ const Grip = () => (
   </svg>
 );
 
+
+// Search for the Add more list. Text is compared without case, accents or
+// punctuation, and "mount" counts as "mt", so "mt washington" finds Mount
+// Washington. Every word typed must appear somewhere in what a place is known
+// by: its names, its town (hills) or description (zones), its area and region,
+// and "backcountry" for zones, so "golden" finds Kicking Horse and "jasper"
+// finds Marmot Basin and Maligne Lake.
+const fold = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\bmount\b/g, "mt")
+    .trim();
+
+const SEARCH_TEXT = new Map(
+  PLACES_BY_REGION.flatMap((g) =>
+    g.places.map((p) => [
+      p.id,
+      fold(
+        [
+          p.name,
+          p.fullName,
+          p.kind === "hill" ? p.config.locality : `${p.config.description} backcountry`,
+          AREAS.find((a) => a.id === p.area)?.name ?? "",
+          g.region.name,
+        ].join(" ")
+      ),
+    ])
+  )
+);
+
+function matches(p: Place, words: string[]) {
+  const text = SEARCH_TEXT.get(p.id) ?? "";
+  return words.every((w) => text.includes(w));
+}
 
 // A drag in progress: the row being dragged (from), the slot it would land in
 // (over), how far the pointer has moved, and every row's box when it started.
@@ -249,6 +287,13 @@ function DrawerContents({ close }: { close: () => void }) {
   const { ids, save, toggle, move, remove } = useDashboard();
   const drawerId = MY_HILLS_DRAWER_ID;
   const picked = ids.map(placeById).filter((p): p is Place => p != null);
+  const [query, setQuery] = useState("");
+  const words = fold(query).split(" ").filter(Boolean);
+  const groups = PLACES_BY_REGION.map((g) => ({
+    ...g,
+    places: g.places.filter((p) => matches(p, words)),
+  })).filter((g) => g.places.length > 0);
+  const found = groups.reduce((n, g) => n + g.places.length, 0);
 
   return (
     <div className="flex h-full flex-col">
@@ -277,38 +322,82 @@ function DrawerContents({ close }: { close: () => void }) {
 
         <fieldset className="mt-6 space-y-5">
           <legend className="text-xs uppercase tracking-widest text-muted">Add more</legend>
-          {PLACES_BY_REGION.map((g) => (
-            <div key={g.region.id} className="pt-3">
-              <p className="text-sm font-semibold text-ink">{g.region.name}</p>
-              <ul className="-mx-2 mt-1">
-                {g.places.map((p) => (
-                  <li key={p.id}>
-                    <label
-                      className="check-row text-[15px] text-ink"
-                      style={{ "--orb": p.color } as CSSProperties}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={ids.includes(p.id)}
-                        onChange={() => toggle(p.id)}
-                        className="sr-only"
-                      />
-                      <span className="check-box" aria-hidden="true">
-                        <Check className="h-4 w-4" />
-                      </span>
-                      <PlaceIcon place={p} className="h-3.5 w-5" />
-                      <span className="min-w-0">
-                        {p.fullName}
-                        {p.kind === "zone" && (
-                          <span className="ml-1.5 text-xs text-muted">backcountry</span>
-                        )}
-                      </span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div className="relative">
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                // Escape clears the search first, and closes the drawer only
+                // once the field is empty.
+                if (e.key === "Escape" && query) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setQuery("");
+                }
+              }}
+              placeholder="Search hills, zones or towns"
+              aria-label="Search hills and backcountry zones"
+              aria-controls={`${drawerId}-results`}
+              autoComplete="off"
+              spellCheck={false}
+              enterKeyHint="search"
+              className="w-full rounded-md border border-edge bg-surface py-2 pr-10 pl-3 text-[15px] text-ink placeholder:text-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300 [&::-webkit-search-cancel-button]:hidden"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Clear search"
+                title="Clear search"
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-faint hover:text-ink"
+              >
+                <Cross />
+              </button>
+            )}
+          </div>
+          <p className="sr-only" role="status">
+            {words.length > 0 && `${found} ${found === 1 ? "match" : "matches"}`}
+          </p>
+          {words.length > 0 && found === 0 && (
+            <p className="border border-dashed border-line-2 px-3 py-3 text-sm text-muted">
+              No hills or zones match &ldquo;{query.trim()}&rdquo;.
+            </p>
+          )}
+          <div id={`${drawerId}-results`} className="space-y-5">
+            {groups.map((g) => (
+              <div key={g.region.id} className="pt-3">
+                <p className="text-sm font-semibold text-ink">{g.region.name}</p>
+                <ul className="-mx-2 mt-1">
+                  {g.places.map((p) => (
+                    <li key={p.id}>
+                      <label
+                        className="check-row text-[15px] text-ink"
+                        style={{ "--orb": p.color } as CSSProperties}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={ids.includes(p.id)}
+                          onChange={() => toggle(p.id)}
+                          className="sr-only"
+                        />
+                        <span className="check-box" aria-hidden="true">
+                          <Check className="h-4 w-4" />
+                        </span>
+                        <PlaceIcon place={p} className="h-3.5 w-5" />
+                        <span className="min-w-0">
+                          {p.fullName}
+                          {p.kind === "zone" && (
+                            <span className="ml-1.5 text-xs text-muted">backcountry</span>
+                          )}
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </fieldset>
 
         <p className="mt-6 text-xs text-faint">
