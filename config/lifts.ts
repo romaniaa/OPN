@@ -242,6 +242,10 @@ export const LIFTS: Record<MountainId, Lift[]> = {
     { name: "Hawk Express", short: "Hawk", kind: "High-speed six", length: 1402, bottom: 1106, top: 1415 },
     { name: "Boomerang", short: "Boomerang", kind: "Fixed-grip quad", length: 1212, bottom: 1146, top: 1367 },
   ],
+  "powder-king": [
+    { name: "Alpine T-bar", short: "Alpine", kind: "T-bar", length: 815, bottom: 1278, top: 1515 },
+    { name: "Powder King Triple Chair", short: "Triple", kind: "Fixed-grip triple", length: 1131, bottom: 962, top: 1311 },
+  ],
   "mt-cain": [
     { name: "Upper T-bar", short: "Upper T", kind: "T-bar", length: 640, bottom: 1381, top: 1615 },
     { name: "Lower T-bar", short: "Lower T", kind: "T-bar", length: 866, bottom: 1192, top: 1385 },

@@ -44,6 +44,12 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     agentUpgrade: "security",
+    // Prerender every page in one worker. Each worker has its own cache, so with
+    // the default (a worker per 25 pages) each one fetched the weather snapshot,
+    // every station and every resort page at the same moment, and Open-Meteo
+    // refused the overlap with 429s. Vercel's build machine already ran a single
+    // worker; this makes local builds match it.
+    staticGenerationMinPagesPerWorker: 1000,
   },
 };
 

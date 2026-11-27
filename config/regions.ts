@@ -3,7 +3,7 @@
 // that its page and the menus are sectioned by; outside the Coast, a region is a
 // single area of the same name. Weather is fetched per place, not per region.
 
-export type RegionId = "coast" | "vancouver-island" | "okanagan" | "kootenays" | "rockies";
+export type RegionId = "coast" | "vancouver-island" | "okanagan" | "kootenays" | "rockies" | "north";
 
 export type AreaId =
   | "north-shore"
@@ -17,7 +17,8 @@ export type AreaId =
   | "vancouver-island"
   | "okanagan"
   | "kootenays"
-  | "rockies";
+  | "rockies"
+  | "north";
 
 export interface RegionConfig {
   id: RegionId; // also its URL: /<id>
@@ -40,9 +41,9 @@ export const REGIONS: RegionConfig[] = [
     name: "Coast",
     title: "Coast Ski Conditions: North Shore, Whistler, Sasquatch, Manning & Baker",
     description:
-      "Rain or snow, freezing level, temperature and snow depth right now at Cypress, Grouse, Seymour, Whistler Blackcomb, Sasquatch, Manning Park and Mt. Baker, plus avalanche danger for the Coast backcountry from Strachan to the Sunshine Coast. Updated hourly.",
+      "Rain or snow, freezing level, temperature and snow depth right now at Cypress, Grouse, Seymour, Whistler Blackcomb, Sasquatch, Manning Park and Mt. Baker, plus avalanche danger for the Coast backcountry from Strachan and Diamond Head to the Sunshine Coast. Updated hourly.",
     intro:
-      "The ski hills within a few hours of Vancouver, from the North Shore up the Sea to Sky to Whistler, out the Fraser Valley to Sasquatch and Manning, and across the border at Mt. Baker, with backcountry from Strachan to Tetrahedron and the Knuckleheads on the Sunshine Coast. On the Coast the rain-or-snow line decides the day.",
+      "The ski hills within a few hours of Vancouver, from the North Shore up the Sea to Sky to Whistler, out the Fraser Valley to Sasquatch and Manning, and across the border at Mt. Baker, with backcountry from Strachan and Garibaldi's Diamond Head to Tetrahedron and the Knuckleheads on the Sunshine Coast. On the Coast the rain-or-snow line decides the day.",
   },
   {
     id: "vancouver-island",
@@ -67,9 +68,9 @@ export const REGIONS: RegionConfig[] = [
     name: "Kootenays",
     title: "Kootenay Ski Conditions: Revelstoke, Kicking Horse, RED, Whitewater & More",
     description:
-      "Temperature, freezing level, snow depth and rain or snow right now at Revelstoke, Kicking Horse, RED, Whitewater, Panorama and Kimberley, plus avalanche danger for Rogers Pass, Mt. Revelstoke and the Dogtooths. Updated hourly.",
+      "Temperature, freezing level, snow depth and rain or snow right now at Revelstoke, Kicking Horse, RED, Whitewater, Panorama and Kimberley, plus avalanche danger for Rogers Pass, Mt. Revelstoke, the Dogtooths and Kootenay Pass. Updated hourly.",
     intro:
-      "The Powder Highway through the Monashees, Selkirks and Purcells: Revelstoke, Kicking Horse, RED, Whitewater, Panorama and Kimberley, and the backcountry at Rogers Pass, Mt. Revelstoke and in the Dogtooth Range.",
+      "The Powder Highway through the Monashees, Selkirks and Purcells: Revelstoke, Kicking Horse, RED, Whitewater, Panorama and Kimberley, and the backcountry at Rogers Pass, Mt. Revelstoke, Kootenay Pass and in the Dogtooth Range.",
   },
   {
     id: "rockies",
@@ -79,6 +80,15 @@ export const REGIONS: RegionConfig[] = [
       "Temperature, freezing level, snow depth and rain or snow right now at Lake Louise, Sunshine, Norquay, Marmot Basin, Nakiska, Castle and Fernie, plus avalanche danger for Kananaskis, Yoho, Bow Summit, the Columbia Icefield and Maligne Lake. Updated hourly.",
     intro:
       "From Fernie and Castle in the south through Kananaskis and Banff to Lake Louise and Marmot Basin in Jasper, with backcountry from Kananaskis and Yoho up the Icefields Parkway to Maligne Lake. High, cold and on Mountain time.",
+  },
+  {
+    id: "north",
+    name: "North",
+    title: "Northern BC Ski & Backcountry Conditions: Powder King, Pine Pass & White Pass",
+    description:
+      "Temperature, freezing level and rain or snow right now at Powder King, plus avalanche danger for Pine Pass and White Pass. Updated hourly.",
+    intro:
+      "Powder King and the Pine Pass on Highway 97, and White Pass on the road from Whitehorse to Skagway. Long, cold winters and few weather stations.",
   },
 ];
 
@@ -95,6 +105,7 @@ export const AREAS: AreaConfig[] = [
   { id: "okanagan", name: "Thompson Okanagan", region: "okanagan" },
   { id: "kootenays", name: "Kootenays", region: "kootenays" },
   { id: "rockies", name: "Canadian Rockies", region: "rockies" },
+  { id: "north", name: "Northern BC", region: "north" },
 ];
 
 export const regionOf = (area: AreaId): RegionId =>

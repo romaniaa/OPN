@@ -15,7 +15,11 @@ export type ZoneId =
   | "yoho"
   | "icefields-parkway"
   | "columbia-icefield"
-  | "maligne";
+  | "maligne"
+  | "diamond-head"
+  | "kootenay-pass"
+  | "pine-pass"
+  | "white-pass";
 
 export interface ZoneConfig {
   id: ZoneId; // URL slug under /backcountry
@@ -82,6 +86,23 @@ const LIST: Omit<ZoneConfig, "region" | "top" | "bottom">[] = [
     lon: -123.12,
     heights: [2000, 1600, 1200],
     stations: [71],
+  },
+  {
+    id: "diamond-head",
+    name: "Diamond Head",
+    fullName: "Diamond Head, Garibaldi Park",
+    description:
+      "Red Heather, Elfin Lakes and the Gargoyles in Garibaldi Provincial Park, from the trailhead above Squamish.",
+    area: "sea-to-sky",
+    timeZone: "America/Vancouver",
+    color: "#9fb8d9",
+    // Near Elfin Lakes (about 1,600 m); the trailhead is near 950 m and the
+    // ridges toward Mamquam reach about 2,000 m.
+    lat: 49.8,
+    lon: -123.03,
+    heights: [2000, 1600, 1200],
+    // No public station nearby; Tantalus (320 m, 12 km) is on the valley floor.
+    stations: [],
   },
   {
     id: "tetrahedron",
@@ -193,6 +214,21 @@ const LIST: Omit<ZoneConfig, "region" | "top" | "bottom">[] = [
     stations: [],
   },
   {
+    id: "kootenay-pass",
+    name: "Kootenay Pass",
+    fullName: "Kootenay Pass",
+    description:
+      "Roadside touring in Stagleap Provincial Park and on the ridges either side of Highway 3 between Salmo and Creston.",
+    area: "kootenays",
+    timeZone: "America/Vancouver",
+    color: "#c9a0a0",
+    // At the pass (1,775 m); the ridges either side reach about 2,200 m.
+    lat: 49.06,
+    lon: -117.04,
+    heights: [2200, 1900, 1600],
+    stations: [41, 42, 88],
+  },
+  {
     id: "kananaskis",
     name: "Kananaskis",
     fullName: "Kananaskis Country",
@@ -268,6 +304,37 @@ const LIST: Omit<ZoneConfig, "region" | "top" | "bottom">[] = [
     lon: -117.68,
     heights: [2500, 2100, 1700],
     stations: [123],
+  },
+  {
+    id: "pine-pass",
+    name: "Pine Pass",
+    fullName: "Pine Pass",
+    description:
+      "Touring and sledding around Powder King and the peaks along Highway 97 over the Pine Pass, between Mackenzie and Chetwynd.",
+    area: "north",
+    timeZone: "America/Dawson_Creek", // Mountain Standard Time all year, as the station feed lists it
+    color: "#a3c4a8",
+    // On the peaks west of Powder King; the highway crosses the pass near 930 m
+    // and the summits reach about 1,800 m.
+    lat: 55.39,
+    lon: -122.69,
+    heights: [1800, 1400, 1000],
+    stations: [79],
+  },
+  {
+    id: "white-pass",
+    name: "White Pass",
+    fullName: "White Pass",
+    description:
+      "Roadside touring off the South Klondike Highway around Fraser, BC, just north of the Alaska border on the road from Whitehorse to Skagway.",
+    area: "north",
+    timeZone: "America/Vancouver", // as the station feed lists it; Whitehorse is an hour ahead in winter
+    color: "#b9b0d9",
+    // Just west of the Fraser customs post (860 m); the peaks reach about 1,900 m.
+    lat: 59.7,
+    lon: -135.1,
+    heights: [1600, 1200, 900],
+    stations: [105, 118],
   },
 ];
 

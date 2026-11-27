@@ -11,7 +11,7 @@ import { pageMetadata } from "@/lib/Site";
 export const metadata = pageMetadata({
   title: "Ski & Backcountry Conditions in BC and the Rockies",
   description:
-    "Temperature, snow depth, rain or snow and freezing level right now at ski hills from the North Shore and Whistler to Vancouver Island, the Okanagan, the Kootenays and the Rockies, plus avalanche danger for the backcountry. Updated hourly.",
+    "Temperature, snow depth, rain or snow and freezing level right now at ski hills from the North Shore and Whistler to Vancouver Island, the Okanagan, the Kootenays, the Rockies and Northern BC, plus avalanche danger for the backcountry. Updated hourly.",
   path: "/hills",
 });
 

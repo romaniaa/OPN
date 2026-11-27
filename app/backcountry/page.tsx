@@ -9,7 +9,7 @@ import { pageMetadata } from "@/lib/Site";
 export const metadata = pageMetadata({
   title: "Backcountry Conditions & Avalanche Danger in BC and the Rockies",
   description:
-    "Today's avalanche danger, temperature by elevation, ridgetop wind and snow depth for Mt. Strachan, Whistler, the Sunshine Coast, Duffey Lake, Coquihalla, Revelstoke, Rogers Pass, Golden, Kananaskis, Yoho, the Icefields Parkway and Jasper. Updated hourly.",
+    "Today's avalanche danger, temperature by elevation, ridgetop wind and snow depth for Mt. Strachan, Squamish, Whistler, the Sunshine Coast, Duffey Lake, Coquihalla, Revelstoke, Rogers Pass, Golden, Kootenay Pass, Kananaskis, Yoho, the Icefields Parkway, Jasper, Pine Pass and White Pass. Updated hourly.",
   path: "/backcountry",
 });
 

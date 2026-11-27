@@ -26,7 +26,8 @@ export type MountainId =
   | "sunshine"
   | "norquay"
   | "lake-louise"
-  | "marmot";
+  | "marmot"
+  | "powder-king";
 
 export interface Landmark {
   name: string;
@@ -86,6 +87,11 @@ export interface MountainConfig {
 // line through the highest lift top, aimed along the line of the upper lift tops,
 // so they show the ski area's main ridge rather than a hand-picked skyline. lat/lon
 // is the average of the lift ends.
+//
+// Powder King (added Nov 2026) follows the same method, with its ridge line run
+// from below the base through both lift tops to Powder King Peak. The terrain
+// model puts the chair's bottom at 962 m; the resort doesn't publish its lift
+// elevations.
 const LIST: Omit<MountainConfig, "region">[] = [
   {
     id: "cypress",
@@ -763,6 +769,32 @@ const LIST: Omit<MountainConfig, "region">[] = [
       top: { label: "Knob Quad (top)", elevation: 2496 },
     },
     profile: [[0,2352],[8,2097],[17,1998],[36,2482],[44,2502],[53,2334],[59,2463],[86,1717],[93,1632],[100,1725]],
+  },
+  {
+    id: "powder-king",
+    name: "Powder King",
+    fullName: "Powder King Mountain Resort",
+    locality: "Pine Pass",
+    province: "BC",
+    country: "CA",
+    area: "north",
+    timeZone: "America/Dawson_Creek",
+    website: "https://www.powderking.com",
+    color: "#8fc0c9",
+    lat: 55.364,
+    lon: -122.627,
+    minElevation: 800,
+    maxElevation: 1700,
+    landmarks: [
+      { name: "Base area", elevation: 962 },
+      { name: "Triple Chair top", elevation: 1311 },
+      { name: "Alpine T-bar top", elevation: 1515 },
+    ],
+    lifts: {
+      bottom: { label: "Powder King Triple Chair (bottom)", elevation: 962 },
+      top: { label: "Alpine T-bar (top)", elevation: 1515 },
+    },
+    profile: [[0,858],[31,970],[56,1354],[80,1627],[86,1612],[100,1384]],
   },
 ];
 

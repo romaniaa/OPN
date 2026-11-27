@@ -15,10 +15,10 @@ export { freezingLevel, tempAt, windAloft, type Profile, type WindProfile } from
 //
 // Free tier: 10,000 calls a day. Open-Meteo weights a request by its locations,
 // variables (per 10) and days (per 14): 36 variables over 17 days is about 4.4
-// calls per place (hill or backcountry zone), each hour. With 26 hills and 15
-// zones that is about 4,330 calls a day, or twice that on an hour GEM fails and
-// the fallback model is fetched too. Places beyond about 45 risk the limit on a
-// day of GEM failures.
+// calls per place (hill or backcountry zone), each hour. With 27 hills and 19
+// zones that is about 4,860 calls a day, or twice that on an hour GEM fails and
+// the fallback model is fetched too, so a day on which GEM failed every hour
+// would now just pass the limit.
 
 const API = "https://api.open-meteo.com/v1/forecast";
 

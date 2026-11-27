@@ -1,7 +1,8 @@
 // Automated weather stations near the backcountry zones, from Avalanche Canada's
 // public station feed (https://avalanche.ca/api-docs). Ids, heights and positions
 // are as the feed lists them (checked 2026-11-14; Rockies and Rogers Pass
-// 2026-11-16; Revelstoke, Yoho and Jasper 2026-11-26).
+// 2026-11-16; Revelstoke, Yoho and Jasper 2026-11-26; Kootenay Pass, Pine Pass
+// and White Pass 2026-11-27).
 // Parks Canada's stations report a relative humidity of 0 where they have no
 // sensor, so humidity from them isn't usable.
 
@@ -15,7 +16,11 @@ export interface StationConfig {
   source: StationSource; // who runs it, for the credit line
 }
 
-export type StationSource = "BC Ministry of Transportation and Infrastructure" | "Parks Canada" | "Kananaskis Country";
+export type StationSource =
+  | "BC Ministry of Transportation and Infrastructure"
+  | "Parks Canada"
+  | "Kananaskis Country"
+  | "Avalanche Canada";
 const MOTI: StationSource = "BC Ministry of Transportation and Infrastructure";
 
 export const STATIONS: StationConfig[] = [
@@ -46,6 +51,12 @@ export const STATIONS: StationConfig[] = [
   { id: 116, name: "Coleman", elevation: 2170, lat: 52.09691, lon: -116.92602, where: "Mt. Coleman area, 17 km southeast", source: "Parks Canada" },
   { id: 129, name: "Tangle Ridge", elevation: 3009, lat: 52.29817, lon: -117.28589, where: "Tangle Ridge, 16 km northwest, exposed alpine", source: "Parks Canada" },
   { id: 123, name: "Maligne", elevation: 1700, lat: 52.7244, lon: -117.64957, where: "By Maligne Lake, 2 km east", source: "Parks Canada" },
+  { id: 41, name: "Kootenay Pass", elevation: 1780, lat: 49.05806, lon: -117.04, where: "Highway 3 at the pass", source: MOTI },
+  { id: 42, name: "Stagleap", elevation: 2140, lat: 49.07161, lon: -117.08389, where: "Ridge 3 km west of the pass", source: MOTI },
+  { id: 88, name: "Crags Ridge", elevation: 2054, lat: 49.07639, lon: -117.00222, where: "Ridge 3 km northeast of the pass", source: MOTI },
+  { id: 79, name: "Link Creek", elevation: 730, lat: 55.50111, lon: -122.65694, where: "Highway 97 valley floor, 12 km north", source: MOTI },
+  { id: 105, name: "Summit Creek", elevation: 1132, lat: 59.702, lon: -135.09, where: "Beside the zone point, 1 km east", source: "Avalanche Canada" },
+  { id: 118, name: "Fraser", elevation: 860, lat: 59.71533, lon: -135.05084, where: "Fraser, on the highway, 3 km northeast", source: "Avalanche Canada" },
 
   // Snow sensors beside ski hills, for a hill's snow depth when its resort has no
   // report (see snowStation in config/mountains.ts). Each is within about 12 km of

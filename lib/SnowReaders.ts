@@ -62,6 +62,7 @@ export const REPORT_PAGES: Record<MountainId, string> = {
   norquay: "https://banffnorquay.com/conditions/",
   "lake-louise": "https://www.skilouise.com/snow-conditions/",
   marmot: "https://www.skimarmot.com/news-snow-report/",
+  "powder-king": "https://www.powderking.com/mountain/ski-report",
 };
 
 async function get(url: string) {
@@ -724,7 +725,7 @@ async function castle(): Promise<SnowReport> {
   );
 }
 
-// Every hill's reader. The three without one link to the resort instead.
+// Every hill's reader. Those without one link to the resort instead.
 export const READERS: Record<MountainId, (timeZone: string) => Promise<SnowReport>> = {
   cypress,
   grouse,
@@ -755,6 +756,9 @@ export const READERS: Record<MountainId, (timeZone: string) => Promise<SnowRepor
   norquay,
   "lake-louise": lakeLouise,
   marmot,
+  // Powder King's report is typed in by hand into a free-form page, so link to it
+  // until it has run a season and its layout is known.
+  "powder-king": async () => ({ status: "unsupported", url: REPORT_PAGES["powder-king"] }),
 };
 
 // Beyond these a figure is a misread (a wrong number picked off a changed page, or
