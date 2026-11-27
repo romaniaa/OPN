@@ -102,7 +102,7 @@ function parse(raw: RawProduct): AvalancheForecast {
 
 // The latest forecast for every zone, refreshed hourly and shared between server
 // instances. Forecasts are issued once a day, usually mid-afternoon Pacific time.
-// One small request per zone: about 120 a day for five zones.
+// One small request per zone each hour: about 360 a day for 15 zones.
 export async function fetchAvalancheForecasts(): Promise<Record<ZoneId, AvalancheForecast>> {
   "use cache: remote";
   cacheLife({ stale: 300, revalidate: 3600, expire: 6 * 3600 });

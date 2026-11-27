@@ -1,6 +1,7 @@
 // Automated weather stations near the backcountry zones, from Avalanche Canada's
 // public station feed (https://avalanche.ca/api-docs). Ids, heights and positions
-// are as the feed lists them (checked 2026-11-14, Rockies and Rogers Pass 2026-11-16).
+// are as the feed lists them (checked 2026-11-14; Rockies and Rogers Pass
+// 2026-11-16; Revelstoke, Yoho and Jasper 2026-11-26).
 // Parks Canada's stations report a relative humidity of 0 where they have no
 // sensor, so humidity from them isn't usable.
 
@@ -37,6 +38,14 @@ export const STATIONS: StationConfig[] = [
   { id: 3, name: "Mud Lake", elevation: 1900, lat: 50.79417, lon: -115.30714, where: "Smith-Dorrien valley at the Burstall trailhead", source: "Kananaskis Country" },
   { id: 113, name: "Vulture Peak", elevation: 2930, lat: 51.6244, lon: -116.47188, where: "Wapta Icefield, exposed alpine", source: "Parks Canada" },
   { id: 112, name: "Bow Summit", elevation: 2040, lat: 51.70937, lon: -116.47904, where: "Highway 93 at Bow Summit", source: "Parks Canada" },
+  { id: 165, name: "Klotz", elevation: 1975, lat: 51.06219, lon: -117.97393, where: "12 km east of the summit, near treeline", source: "Parks Canada" },
+  { id: 110, name: "Bosworth Lower", elevation: 2210, lat: 51.45722, lon: -116.35783, where: "Mt. Bosworth above the pass, 3 km northeast", source: "Parks Canada" },
+  { id: 111, name: "Bosworth Upper", elevation: 2745, lat: 51.46954, lon: -116.34969, where: "Mt. Bosworth, 4 km northeast, exposed alpine", source: "Parks Canada" },
+  { id: 117, name: "Boulder Creek", elevation: 1280, lat: 51.36353, lon: -116.52637, where: "Valley floor below Field, 13 km southwest", source: "Parks Canada" },
+  { id: 115, name: "Big Bend", elevation: 2125, lat: 52.17829, lon: -117.07333, where: "Below Parker Ridge, 4 km east", source: "Parks Canada" },
+  { id: 116, name: "Coleman", elevation: 2170, lat: 52.09691, lon: -116.92602, where: "Mt. Coleman area, 17 km southeast", source: "Parks Canada" },
+  { id: 129, name: "Tangle Ridge", elevation: 3009, lat: 52.29817, lon: -117.28589, where: "Tangle Ridge, 16 km northwest, exposed alpine", source: "Parks Canada" },
+  { id: 123, name: "Maligne", elevation: 1700, lat: 52.7244, lon: -117.64957, where: "By Maligne Lake, 2 km east", source: "Parks Canada" },
 
   // Snow sensors beside ski hills, for a hill's snow depth when its resort has no
   // report (see snowStation in config/mountains.ts). Each is within about 12 km of

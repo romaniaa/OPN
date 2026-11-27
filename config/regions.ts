@@ -67,18 +67,18 @@ export const REGIONS: RegionConfig[] = [
     name: "Kootenays",
     title: "Kootenay Ski Conditions: Revelstoke, Kicking Horse, RED, Whitewater & More",
     description:
-      "Temperature, freezing level, snow depth and rain or snow right now at Revelstoke, Kicking Horse, RED, Whitewater, Panorama and Kimberley, plus Rogers Pass avalanche danger. Updated hourly.",
+      "Temperature, freezing level, snow depth and rain or snow right now at Revelstoke, Kicking Horse, RED, Whitewater, Panorama and Kimberley, plus avalanche danger for Rogers Pass, Mt. Revelstoke and the Dogtooths. Updated hourly.",
     intro:
-      "The Powder Highway through the Monashees, Selkirks and Purcells: Revelstoke, Kicking Horse, RED, Whitewater, Panorama and Kimberley, and the Rogers Pass backcountry.",
+      "The Powder Highway through the Monashees, Selkirks and Purcells: Revelstoke, Kicking Horse, RED, Whitewater, Panorama and Kimberley, and the backcountry at Rogers Pass, Mt. Revelstoke and in the Dogtooth Range.",
   },
   {
     id: "rockies",
     name: "Rockies",
     title: "Canadian Rockies Ski Conditions: Lake Louise, Sunshine, Norquay, Fernie & More",
     description:
-      "Temperature, freezing level, snow depth and rain or snow right now at Lake Louise, Sunshine, Norquay, Marmot Basin, Nakiska, Castle and Fernie, plus Kananaskis and Icefields Parkway avalanche danger. Updated hourly.",
+      "Temperature, freezing level, snow depth and rain or snow right now at Lake Louise, Sunshine, Norquay, Marmot Basin, Nakiska, Castle and Fernie, plus avalanche danger for Kananaskis, Yoho, Bow Summit, the Columbia Icefield and Maligne Lake. Updated hourly.",
     intro:
-      "From Fernie and Castle in the south through Kananaskis and Banff to Lake Louise and Marmot Basin in Jasper, with the Kananaskis and Icefields Parkway backcountry. High, cold and on Mountain time.",
+      "From Fernie and Castle in the south through Kananaskis and Banff to Lake Louise and Marmot Basin in Jasper, with backcountry from Kananaskis and Yoho up the Icefields Parkway to Maligne Lake. High, cold and on Mountain time.",
   },
 ];
 

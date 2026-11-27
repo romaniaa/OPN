@@ -15,9 +15,10 @@ export { freezingLevel, tempAt, windAloft, type Profile, type WindProfile } from
 //
 // Free tier: 10,000 calls a day. Open-Meteo weights a request by its locations,
 // variables (per 10) and days (per 14): 36 variables over 17 days is about 4.4
-// calls per place (hill or backcountry zone), each hour. With 26 hills and 8 zones
-// that is about 3,570 calls a day, or twice that on an hour GEM fails and the
-// fallback model is fetched too.
+// calls per place (hill or backcountry zone), each hour. With 26 hills and 15
+// zones that is about 4,330 calls a day, or twice that on an hour GEM fails and
+// the fallback model is fetched too. Places beyond about 45 risk the limit on a
+// day of GEM failures.
 
 const API = "https://api.open-meteo.com/v1/forecast";
 
@@ -113,6 +114,23 @@ function windProfileAt(h: Hourly, i: number): WindProfile | null {
   };
 }
 
+// Open-Meteo refuses a request with 429 "Too many concurrent requests" while
+// others from the same address are still running, as happens when several build
+// workers prerender pages at once. Those finish within seconds, so wait and try
+// the same request again rather than falling through to the other model, which
+// would be refused too. Kept short: a page's prerender times out after 60 s.
+const RETRY_AFTER_MS = [3_000, 8_000];
+
+async function fetchRetrying(url: URL): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, { signal: AbortSignal.timeout(45_000) });
+    const wait = RETRY_AFTER_MS[attempt];
+    if (res.status !== 429 || wait == null) return res;
+    await res.body?.cancel();
+    await new Promise((r) => setTimeout(r, wait + Math.random() * 2_000));
+  }
+}
+
 // One request for many points. The GEM model first, then Open-Meteo's default
 // model only if GEM fails or has gaps, so a normal refresh is a single call.
 async function fetchPoints<T>(
@@ -129,7 +147,7 @@ async function fetchPoints<T>(
       for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
       if (model) url.searchParams.set("models", model);
 
-      const res = await fetch(url, { signal: AbortSignal.timeout(45_000) });
+      const res = await fetchRetrying(url);
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       const json = await res.json();
       const list: { hourly?: Hourly }[] = Array.isArray(json) ? json : [json];

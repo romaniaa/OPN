@@ -8,9 +8,14 @@ export type ZoneId =
   | "knuckleheads"
   | "duffey"
   | "coquihalla"
+  | "mt-revelstoke"
   | "rogers-pass"
+  | "dogtooth"
   | "kananaskis"
-  | "icefields-parkway";
+  | "yoho"
+  | "icefields-parkway"
+  | "columbia-icefield"
+  | "maligne";
 
 export interface ZoneConfig {
   id: ZoneId; // URL slug under /backcountry
@@ -140,6 +145,22 @@ const LIST: Omit<ZoneConfig, "region" | "top" | "bottom">[] = [
     stations: [16, 17, 15],
   },
   {
+    id: "mt-revelstoke",
+    name: "Mt. Revelstoke NP",
+    fullName: "Mount Revelstoke National Park",
+    description:
+      "The Meadows in the Sky Parkway, closed to cars in winter, up Mt. Revelstoke to Balsam Lake and the peaks behind, right above town.",
+    area: "kootenays",
+    timeZone: "America/Vancouver",
+    color: "#c7a6d9",
+    // Near the summit (about 1,900 m); the parkway starts in town near 500 m and
+    // the peaks behind reach about 2,200 m.
+    lat: 51.04,
+    lon: -118.145,
+    heights: [2200, 1800, 1400],
+    stations: [165],
+  },
+  {
     id: "rogers-pass",
     name: "Rogers Pass",
     fullName: "Rogers Pass",
@@ -152,6 +173,24 @@ const LIST: Omit<ZoneConfig, "region" | "top" | "bottom">[] = [
     lon: -117.52,
     heights: [2500, 2000, 1500],
     stations: [91, 96, 95, 93, 98],
+  },
+  {
+    id: "dogtooth",
+    name: "Dogtooth",
+    fullName: "Dogtooth Range",
+    description:
+      "The Purcell peaks west of Golden, beyond Kicking Horse's boundary.",
+    area: "kootenays",
+    timeZone: "America/Edmonton", // Golden keeps Mountain time
+    color: "#d9a77a",
+    // On the range southwest of Kicking Horse's summit; it has its own Purcells
+    // forecast, unlike Rogers Pass and Revelstoke.
+    lat: 51.27,
+    lon: -117.15,
+    heights: [2500, 2000, 1500],
+    // No public station in the range; Kicking Horse (1,844 m) is across the
+    // Columbia valley in the Rockies and reports only temperature.
+    stations: [],
   },
   {
     id: "kananaskis",
@@ -168,9 +207,26 @@ const LIST: Omit<ZoneConfig, "region" | "top" | "bottom">[] = [
     stations: [1, 5, 3],
   },
   {
+    id: "yoho",
+    name: "Yoho",
+    fullName: "Yoho and Kicking Horse Pass",
+    description:
+      "The peaks around Kicking Horse Pass and Field off Highway 1, in Yoho National Park.",
+    area: "rockies",
+    timeZone: "America/Edmonton",
+    color: "#86c4b0",
+    // Between Field (about 1,250 m) and the pass (1,630 m), below Mt. Bosworth.
+    lat: 51.44,
+    lon: -116.385,
+    heights: [2600, 2100, 1600],
+    stations: [110, 111, 117],
+  },
+  {
+    // The id stays for existing links and saved dashboards; the zone now covers
+    // only the parkway's south end, with the Columbia Icefield further north.
     id: "icefields-parkway",
-    name: "Icefields Parkway",
-    fullName: "Icefields Parkway",
+    name: "Bow Summit",
+    fullName: "Bow Summit and the Wapta",
     description:
       "Bow Summit, Observation Peak and the Wapta Icefield approaches along Highway 93 North.",
     area: "rockies",
@@ -180,6 +236,38 @@ const LIST: Omit<ZoneConfig, "region" | "top" | "bottom">[] = [
     lon: -116.47,
     heights: [2900, 2400, 1900],
     stations: [113, 112],
+  },
+  {
+    id: "columbia-icefield",
+    name: "Columbia Icefield",
+    fullName: "Columbia Icefield and Sunwapta Pass",
+    description:
+      "Parker Ridge, Hilda Peak and the Athabasca Glacier approaches at Sunwapta Pass on Highway 93 North. Check Parks Canada's bulletins for closures.",
+    area: "rockies",
+    timeZone: "America/Edmonton",
+    color: "#a8c8e8",
+    // By Parker Ridge, just south of the pass (2,035 m). Under Jasper's forecast,
+    // not the Banff, Yoho and Kootenay one that covers Bow Summit.
+    lat: 52.19,
+    lon: -117.13,
+    heights: [3000, 2500, 2000],
+    stations: [115, 116, 129],
+  },
+  {
+    id: "maligne",
+    name: "Maligne",
+    fullName: "Maligne Lake",
+    description:
+      "The Bald Hills and the peaks above Maligne Lake, at the end of the Maligne Lake Road from Jasper. Parks Canada closes some areas for caribou and since the 2024 wildfire; check its bulletins.",
+    area: "rockies",
+    timeZone: "America/Edmonton",
+    color: "#b7c58a",
+    // On the Bald Hills' lower slopes; the lake is at about 1,670 m and the
+    // hills reach about 2,500 m.
+    lat: 52.73,
+    lon: -117.68,
+    heights: [2500, 2100, 1700],
+    stations: [123],
   },
 ];
 
