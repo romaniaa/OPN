@@ -5,12 +5,13 @@ import { WEBCAMS } from "@/config/webcams";
 export const SITE_NAME = "OpenPeaks";
 
 // Absolute site URL for canonical links, the sitemap and social previews.
-// Every Vercel build (previews too) points at openpeaks.ca, the one canonical
-// host; next.config.ts redirects every other domain there. Vercel's own
-// "production domain" can't be trusted for this: it picked the old domain.
+// Every production build (Railway PR environments too) points at openpeaks.ca,
+// the one canonical host; next.config.ts redirects every other domain there.
+// Only `next dev` uses localhost. This doesn't depend on the host: neither
+// Vercel's "production domain" nor a Railway domain is the right answer.
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL ? "https://openpeaks.ca" : "http://localhost:3000")
+  (process.env.NODE_ENV === "production" ? "https://openpeaks.ca" : "http://localhost:3000")
 ).replace(/\/$/, "");
 
 // A page's openGraph replaces the layout's rather than merging with it, so

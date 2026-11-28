@@ -4,9 +4,9 @@ import type { SnowReport } from "@/lib/SnowReaders";
 // The last good snow report read from each resort, kept in Redis so that when a
 // resort's site is down or has changed, its card shows those figures (marked as
 // saved) instead of nothing. Uses Upstash Redis's REST API, so no client library:
-// add Upstash Redis to the Vercel project (Storage → Marketplace) and it sets the
-// environment variables read below. Without them this does nothing, and a failed
-// read shows as unavailable, as before.
+// set the REST URL and token from the Upstash console as the environment
+// variables read below. Without them this does nothing, and a failed read shows
+// as unavailable, as before.
 
 type OkReport = Extract<SnowReport, { status: "ok" }>;
 
