@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title={TITLE} updated="November 23, 2026">
+    <LegalPage title={TITLE} updated="November 28, 2026">
       <p>
         {SITE_NAME} (openpeaks.ca) is a free ski conditions site run by{" "}
         <a href={CREATOR_URL}>{CREATOR_NAME}</a> in British Columbia, Canada. The
@@ -49,32 +49,34 @@ export default function PrivacyPage() {
 
       <h2>Hosting and server logs</h2>
       <p>
-        The site is hosted on Vercel. Like any web host, Vercel processes basic
-        technical information when your browser requests a page, such as your IP
-        address, browser type, the page requested and the time, to deliver the site and
-        protect it from abuse. We don&apos;t use this information to identify you.
-        Vercel is based in the United States, so this information may be processed
-        outside Canada. See{" "}
-        <a href="https://vercel.com/legal/privacy-policy">Vercel&apos;s privacy policy</a>.
+        The site runs on Railway&apos;s servers, and every request passes through
+        Cloudflare, which delivers pages quickly from nearby and protects the site from
+        abuse. Like any web host, both process basic technical information when your
+        browser requests a page, such as your IP address, browser type, the page
+        requested and the time. We don&apos;t use this information to identify you.
+        Railway and Cloudflare are based in the United States, so this information may
+        be processed outside Canada. See{" "}
+        <a href="https://railway.com/legal/privacy">Railway&apos;s privacy policy</a>{" "}
+        and{" "}
+        <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare&apos;s privacy policy</a>.
       </p>
 
       <h2>Page-view counts</h2>
       <p>
-        We use Vercel Web Analytics to count visits to each page, so we know which
-        hills and pages get used. It doesn&apos;t use third-party cookies. For each
-        page view it records the page, the site you came from, your approximate
-        location (country, region and city), your browser, operating system and
-        device type, and the time.
+        We use Cloudflare Web Analytics to count visits to each page, so we know which
+        hills and pages get used. It doesn&apos;t set cookies or store anything in your
+        browser. For each page view it records the page, the site you came from, your
+        country, your browser, operating system and device type, how quickly the page
+        loaded, and the time.
       </p>
       <p>
-        What we see are totals, not individual visitors: the data isn&apos;t tied to
-        you or your IP address. Visits are grouped using a value derived from the
-        request, a visit&apos;s session is discarded after 24 hours, and nothing is
-        kept that would let your browsing be followed across other sites. Anything
-        after a <code>?</code> or <code>#</code> in the page&apos;s address (where a
-        shared My hills list goes) is removed before it&apos;s sent. See{" "}
-        <a href="https://vercel.com/docs/analytics/privacy-policy">
-          Vercel&apos;s Web Analytics privacy notes
+        What we see are totals, not individual visitors: Cloudflare doesn&apos;t
+        fingerprint you or use your IP address to follow you between pages or across
+        other sites. Anything after a <code>?</code> or <code>#</code> in the
+        page&apos;s address (where a shared My hills list goes) is removed before
+        it&apos;s sent. See{" "}
+        <a href="https://www.cloudflare.com/web-analytics/">
+          Cloudflare Web Analytics
         </a>
         .
       </p>

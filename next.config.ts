@@ -19,13 +19,19 @@ const nextConfig: NextConfig = {
       // domain, .site and the www hosts all point at this project, so send
       // them there, keeping the path and query. Next wraps host values in
       // ^…$; the outer group keeps that anchor around every alternative, so
-      // this never matches openpeaks.ca, localhost or preview URLs.
+      // this never matches openpeaks.ca, localhost or preview URLs. With
+      // REDIRECT_RAILWAY_HOST=1 (set on the production service once openpeaks.ca
+      // is served from Railway; read at build time) it also sends the service's own
+      // *.up.railway.app address there, so search engines don't index a second
+      // copy of the site. PR environments don't set it and keep theirs.
       {
         source: "/:path*",
         has: [
           {
             type: "host",
-            value: "(www\\.openpeaks\\.ca|(www\\.)?openpeaks\\.site|(www\\.)?northshorepeaks\\.com)",
+            value: `(www\\.openpeaks\\.ca|(www\\.)?openpeaks\\.site|(www\\.)?northshorepeaks\\.com${
+              process.env.REDIRECT_RAILWAY_HOST === "1" ? "|[a-z0-9-]+\\.up\\.railway\\.app" : ""
+            })`,
           },
         ],
         destination: "https://openpeaks.ca/:path*",

@@ -9,9 +9,10 @@ import { freezingLevel, type Profile, type WindProfile } from "@/lib/Profile";
 export { freezingLevel, tempAt, windAloft, type Profile, type WindProfile } from "@/lib/Profile";
 
 // Raw weather-model data from Open-Meteo, one request at most once an hour, shared
-// by every page through the remote cache. On Vercel that cache is shared between
-// server instances, so one fetch serves the home page, every hill page and any later
-// dashboard. Pages pick the current hour from it (see lib/Weather.ts).
+// by every page through the remote cache. The site runs as one `next start` server
+// on Railway, where that cache is Next's in-memory one (50 MB, cacheMaxMemorySize),
+// so one fetch serves the home page, every hill page and any later dashboard until
+// the server restarts. Pages pick the current hour from it (see lib/Weather.ts).
 //
 // Free tier: 10,000 calls a day. Open-Meteo weights a request by its locations,
 // variables (per 10) and days (per 14): 36 variables over 17 days is about 4.4
